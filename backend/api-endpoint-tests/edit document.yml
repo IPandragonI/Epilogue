@@ -1,0 +1,36 @@
+info:
+  name: edit document
+  type: http
+  seq: 3
+
+http:
+  method: PATCH
+  url: https://api.notion.com/v1/pages/33651886-0e98-8149-beaf-cea41822438d
+  headers:
+    - name: Notion-Version
+      value: " 2022-06-28"
+  body:
+    type: json
+    data: |-
+      {
+        "properties": {
+          "title": {
+            "title": [
+              {
+                "text": {
+                  "content": "Nouvelle page enfant 🚀qsdqsd"
+                }
+              }
+            ]
+          }
+        }
+      }
+  auth:
+    type: bearer
+    token: Your notion api key
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
