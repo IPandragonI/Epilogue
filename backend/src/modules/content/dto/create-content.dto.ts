@@ -1,4 +1,4 @@
-import { ContentNotionStatusEnum } from "../entities/contentNotionStatus.enum";
+import { ContentNotionStatusEnum } from "../../content-notion/entities/contentNotionStatus.enum";
 
 export class CreateContentDto {
     title!: string;

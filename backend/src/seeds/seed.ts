@@ -10,7 +10,7 @@ import { ContentIdea } from '../modules/content-idea/entities/content-idea.entit
 import { Content } from '../modules/content/entities/content.entity';
 import { UserRole } from '../modules/users/entities/userRole.enum';
 import { ContentStatusEnum } from '../modules/content/entities/contentStatus.enum';
-import { ContentNotionStatusEnum } from '../modules/content/entities/contentNotionStatus.enum';
+import { ContentNotionStatusEnum } from '../modules/content-notion/entities/contentNotionStatus.enum';
 import { ContentSeo } from '../modules/content-seo/entities/content-seo.entity';
 import { ContentNotion } from '../modules/content-notion/entities/content-notion.entity';
 

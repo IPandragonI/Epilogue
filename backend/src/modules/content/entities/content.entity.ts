@@ -1,7 +1,5 @@
 import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ContentStatusEnum } from "./contentStatus.enum";
-import { ContentNotionStatusEnum } from "./contentNotionStatus.enum";
-import { ContentNotion } from '../../content-notion/entities/content-notion.entity';
 
 
 @Entity('contents')
