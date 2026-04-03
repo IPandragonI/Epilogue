@@ -1,5 +1,6 @@
 export const Status = {
     PUBLISHED: "Publié",
+    WAITING_PUBLISH: "En attente de publication",
     DRAFT: "Brouillon",
 } as const;
 
@@ -16,7 +17,8 @@ export type NotionSyncStatusType = (typeof NotionSyncStatus)[keyof typeof Notion
 export interface Content {
     id: number;
     title: string;
-    body?: string;
+    body: string;
+    contentType: string;
     date: string;
     seo?: ContentSeo;
     status: StatusType;
