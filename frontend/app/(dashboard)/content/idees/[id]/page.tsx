@@ -68,14 +68,14 @@ export default function IdeeDetailPage() {
     const config = PLATEFORME_CONFIG[IDEE.plateforme];
 
     const handleEdit = () => {
-        router.push(`/contenu/redaction?idee=${IDEE.id}`);
+        router.push(`/content/redaction?idee=${IDEE.id}`);
     };
 
     return (
         <div className="flex flex-col gap-6 max-w-full h-full">
             <div className="flex items-center gap-2">
                 <Link
-                    href="/contenu/idees"
+                    href="/content/idees"
                     className="flex items-center gap-1.5 text-sm text-base-content/50 hover:text-base-content transition-colors"
                 >
                     <ArrowLeft size={14}/>

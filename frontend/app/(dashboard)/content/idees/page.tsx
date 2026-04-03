@@ -166,7 +166,7 @@ export default function IdeesPage() {
     };
 
     const handleDetail = (idee: Idee) => {
-        router.push(`/contenu/idees/${idee.id}`);
+        router.push(`/content/idees/${idee.id}`);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

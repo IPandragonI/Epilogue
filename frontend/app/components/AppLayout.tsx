@@ -1,8 +1,8 @@
 "use client";
 
 import {useState} from "react";
-import Sidebar from "./Sidebar";
-import Navbar from "./Navbar";
+import Sidebar from "./app/Sidebar";
+import Navbar from "./app/Navbar";
 
 export default function AppLayout({children}: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);

@@ -1,18 +1,7 @@
 import {LayoutList, TrendingUp, Zap, ArrowUpDown, MoreHorizontal, ChevronLeft, ChevronRight} from "lucide-react";
-
-type StatCard = {
-    label: string;
-    value: string;
-    icon: React.ReactNode;
-};
-
-type Content = {
-    id: number;
-    titre: string;
-    date: string;
-    scoreSeo: number;
-    status: "Publié" | "Brouillon" | "En cours de syncro";
-};
+import {StatCard, Status, Content} from "@/app/types/types";
+import StatusBadge from "@/app/components/common/StatusBadge";
+import ScoreBar from "@/app/components/common/ScoreBar";
 
 const STATS: StatCard[] = [
     {
@@ -33,28 +22,37 @@ const STATS: StatCard[] = [
 ];
 
 const CONTENTS: Content[] = [
-    {id: 1, titre: "Guide SEO 2026 : Les tendances à suivre pour booster votre référencement", date: "1/11/2050", scoreSeo: 92, status: "Publié"},
-    {id: 2, titre: "Stratégie content marketing : Comment créer un calendrier éditorial efficace ?", date: "1/11/2050", scoreSeo: 57, status: "Publié"},
-    {id: 3, titre: "Top outils 10 IA pour copywriters en 2026", date: "1/11/2050", scoreSeo: 86, status: "Brouillon"},
-    {id: 4, titre: "Comment optimiser son site pour la recherche vocale en 2026 ?", date: "1/11/2050", scoreSeo: 24, status: "En cours de syncro"},
-    {id: 5, titre: "Les 10 erreurs à ne pas commettre en SEO en 2026", date: "1/11/2050", scoreSeo: 58, status: "Publié"},
-    {id: 6, titre: "Mes blogs SEO préférés à suivre en 2026", date: "1/11/2050", scoreSeo: 88, status: "En cours de syncro"},
+    {
+        id: 1,
+        title: "Guide SEO 2026 : Les tendances à suivre pour booster votre référencement",
+        date: "1/11/2050",
+        seo: {score: 92},
+        status: Status.PUBLISHED
+    },
+    {
+        id: 2,
+        title: "Stratégie content marketing : Comment créer un calendrier éditorial efficace ?",
+        date: "1/11/2050",
+        seo: {score: 57},
+        status: Status.PUBLISHED
+    },
+    {id: 3, title: "Top outils 10 IA pour copywriters en 2026", date: "1/11/2050", seo: {score: 86}, status: Status.DRAFT},
+    {
+        id: 4,
+        title: "Comment optimiser son site pour la recherche vocale en 2026 ?",
+        date: "1/11/2050",
+        seo: {score: 24},
+        status: Status.DRAFT
+    },
+    {
+        id: 5,
+        title: "Les 10 erreurs à ne pas commettre en SEO en 2026",
+        date: "1/11/2050",
+        seo: {score: 58},
+        status: Status.PUBLISHED
+    },
+    {id: 6, title: "Mes blogs SEO préférés à suivre en 2026", date: "1/11/2050", seo: {score: 88}, status: Status.DRAFT},
 ];
-
-
-function StatusBadge({status}: { status: Content["status"] }) {
-    const styles: Record<Content["status"], string> = {
-        Publié: "badge-success",
-        Brouillon: "badge-warning",
-        "En cours de syncro": "badge-info",
-    };
-
-    return (
-        <span className={`badge badge-soft badge-sm font-medium ${styles[status]}`}>
-      {status}
-    </span>
-    );
-}
 
 
 export default function DashboardPage() {
@@ -107,15 +105,13 @@ export default function DashboardPage() {
                             {CONTENTS.map((content) => (
                                 <tr key={content.id} className="border-base-300 hover:bg-base-200 transition-colors">
                                     <td className="pl-6 font-medium text-sm max-w-xs truncate">
-                                        <a href={`/contenu/posts/${content.id}`} className="hover:underline">
-                                            {content.titre}
+                                        <a href={`/content/posts/${content.id}`} className="hover:underline">
+                                            {content.title}
                                         </a>
                                     </td>
                                     <td className="text-sm text-base-content/50">{content.date}</td>
-                                    <td className="text-sm font-medium">{content.scoreSeo}</td>
-                                    <td>
-                                        <StatusBadge status={content.status}/>
-                                    </td>
+                                    <td><ScoreBar score={content.seo?.score ?? 0}/></td>
+                                    <td><StatusBadge status={content.status}/></td>
                                     <td>
                                         <button className="btn btn-ghost btn-xs btn-square">
                                             <MoreHorizontal size={14}/>
