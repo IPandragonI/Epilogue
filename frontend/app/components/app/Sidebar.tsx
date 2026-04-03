@@ -39,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
         children: [
             {label: "Mes posts", href: "/content/posts"},
             {label: "Génération d'idées", href: "/content/ideas"},
-            {label: "Rédaction de contenus", href: "/content/redaction"},
+            {label: "Rédaction de contenus", href: "/content/writing"},
         ],
     },
     {
