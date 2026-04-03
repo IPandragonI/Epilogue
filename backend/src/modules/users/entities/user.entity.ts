@@ -1,4 +1,9 @@
-import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn} from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserRole } from './userRole.enum';
 
 @Entity('users')
@@ -8,20 +13,20 @@ export class User {
   id: string;
 
   @Column({ type: 'varchar', length: 100 })
-  lastname: string;
+  lastname!: string;
 
   @Column({ type: 'varchar', length: 100 })
-  firstname: string;
+  firstname!: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  email: string;
+  email!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  password: string;
+  password!: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.PUBLIC })
-  role: UserRole;
+  role!: UserRole;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  createdAt: Date;
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt!: Date;
 }
