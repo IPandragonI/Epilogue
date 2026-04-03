@@ -14,6 +14,15 @@ export const NotionSyncStatus = {
 
 export type NotionSyncStatusType = (typeof NotionSyncStatus)[keyof typeof NotionSyncStatus];
 
+export const Platform = {
+    BLOG: "Blog",
+    LINKEDIN: "LinkedIn",
+    TWITTER: "Twitter",
+    INSTAGRAM: "Instagram",
+} as const;
+
+export type PlatformType = (typeof Platform)[keyof typeof Platform];
+
 export interface Content {
     id: number;
     title: string;
@@ -34,6 +43,25 @@ export interface ContentSeo {
 export interface ContentNotion {
     notionSyncStatus: NotionSyncStatusType;
     notionPageId?: string;
+}
+
+export interface ContentIdea {
+    id: number;
+    title: string;
+    description: string;
+    topic?: Topic;
+    platform: PlatformType;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface Topic {
+    id: number;
+    name: string;
+    description?: string;
+    color?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface StatCard {
