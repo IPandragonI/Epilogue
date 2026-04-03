@@ -6,9 +6,6 @@ info:
 http:
   method: POST
   url: https://api.notion.com/v1/databases
-  headers:
-    - name: Notion-Version
-      value: " 2022-06-28"
   body:
     type: json
     data: |-
@@ -42,9 +39,7 @@ http:
           }
         }
       }
-  auth:
-    type: bearer
-    token: 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
+  auth: inherit
 
 settings:
   encodeUrl: true

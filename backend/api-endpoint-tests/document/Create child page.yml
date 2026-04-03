@@ -28,9 +28,7 @@ http:
           }
         }
       }
-  auth:
-    type: bearer
-    token: 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
+
 
 settings:
   encodeUrl: true
