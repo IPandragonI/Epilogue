@@ -36,7 +36,7 @@ docs:
 
     4. mettre la clé dans l'auth
 
-    5. Récupérer l'id de la page : prendre l'url de la page (exemple : https://www.notion.so/Epylogue-document-336518860e9880ffb22bd8963e8188aa) Récupérer l'identifiant après document et rajouter des - comme sur le modèle suivant : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    5. Récupérer l'id de la page : prendre l'url de la page (exemple : https://www.notion.so/Epylogue-document-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx) Récupérer l'identifiant après document et rajouter des - comme sur le modèle suivant : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
       
     6. Créer avec la requete 'create child page' en utilisant l'id créer avant comme id de page
 
