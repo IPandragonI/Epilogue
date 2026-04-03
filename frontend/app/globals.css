@@ -12,6 +12,8 @@
     --color-epilogue-muted: #6B7280;
     --color-epilogue-subtle: #F3F4F6;
 
+    --color-background: var(--color-epilogue-bg);
+
     --color-base-100: var(--color-epilogue-surface);
     --color-base-200: var(--color-epilogue-subtle);
     --color-base-300: var(--color-epilogue-border);
@@ -49,6 +51,8 @@
 @plugin "daisyui/theme" {
     name: "epilogue";
     default: true;
+
+    --color-background: var(--color-epilogue-bg);
 
     --color-base-100: var(--color-epilogue-surface);
     --color-base-200: var(--color-epilogue-subtle);
