@@ -49,25 +49,27 @@ export default function WritingPage() {
                             <button
                                 key={platformKey}
                                 onClick={() => setPlatform(platformKey)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all hover:cursor-pointer ${
+                                className={`flex items-start justify-between gap-3 px-4 py-3 rounded-xl border text-left transition-all hover:cursor-pointer min-w-56 ${
                                     platform === platformKey
-                                        ? "border-base-content bg-base-100 shadow-sm"
-                                        : "border-base-300 bg-base-100 hover:border-base-content/30"
+                                        ? "border-accent bg-base-100 shadow-sm"
+                                        : "border-base-300 bg-base-100 hover:border-accent/30"
                                 }`}
                             >
+                                <div className={`flex items-center justify-between gap-3`}>
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                                    platform === platformKey ? "bg-base-content text-base-100" : "bg-base-200 text-base-content/50"
+                                    platform === platformKey ? "bg-accent text-base-100" : "bg-base-200 text-accent/50"
                                 }`}>
                                     {config.icon}
                                 </div>
                                 <div>
-                                    <p className={`text-sm font-semibold leading-tight ${platform === platformKey ? "" : "text-base-content/60"}`}>
+                                    <p className={`text-sm font-semibold leading-tight ${platform === platformKey ? "" : "text-accent/60"}`}>
                                         {config.label}
                                     </p>
-                                    <p className="text-xs text-base-content/40">{config.subLabel}</p>
+                                    <p className="text-xs text-accent/40">{config.subLabel}</p>
                                 </div>
+                                    </div>
                                 {platform === platformKey && (
-                                    <CheckCircle2 size={16} className="ml-1 text-base-content shrink-0"/>
+                                    <CheckCircle2 size={16} className="ml-1 text-accent shrink-0"/>
                                 )}
                             </button>
                         ))}
@@ -152,7 +154,7 @@ export default function WritingPage() {
                     </div>
                 </div>
 
-                <button className="btn btn-primary gap-2 rounded-xl w-full">
+                <button className="btn btn-accent gap-2 rounded-xl w-full">
                     Ajouter votre post
                     <ArrowRight size={15}/>
                 </button>
