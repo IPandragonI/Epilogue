@@ -12,7 +12,10 @@ export class AIController {
     @ApiResponse({ status: 200, description: 'Text generated successfully.' })
     @ApiResponse({ status: 400, description: 'Invalid input.' })
     async generateText(@Body() body: GenerateTextDto) {
-        const result = await this.aiService.generateText(body.prompt);
+        const result = await this.aiService.generateText(
+            body.prompt,
+            body.template,
+        );
 
         return {
             success: true,

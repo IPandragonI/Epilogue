@@ -5,5 +5,6 @@ export class GenerateTextDto {
     prompt: string;
 
     @IsOptional()
-    options?: Record<string, any>;
+    @IsString()
+    template?: string;
 }
