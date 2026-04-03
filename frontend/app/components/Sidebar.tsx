@@ -158,14 +158,14 @@ export default function Sidebar({isOpen}: { isOpen: boolean }) {
             className={`flex flex-col bg-base-100 border-r border-base-200 shrink-0 transition-all duration-300 ease-in-out overflow-hidden
                 ${isOpen ? "w-56" : "w-14"}`}
         >
-            <div className="flex items-center gap-2.5 px-4 h-16 border-b border-base-200 shrink-0">
+            <Link href={"/dashboard"} className="flex items-center gap-2.5 px-4 h-16 border-b border-base-200 shrink-0">
                 <Image src="/logo.png" alt="Logo" width={32} height={32}/>
                 {isOpen && (
                     <span className="font-bold text-lg tracking-tight whitespace-nowrap">
             Épilogue
           </span>
                 )}
-            </div>
+            </Link>
 
             <nav className="flex-1 px-2 py-4 overflow-y-auto">
                 <ul className="flex flex-col gap-0.5">
