@@ -9,6 +9,9 @@
     --color-epilogue-navy: #001B40;
     --color-epilogue-muted: #6B7280;
     --color-epilogue-subtle: #F3F4F6;
+
+    --font-sans: var(--font-rubik);
+    --font-display: var(--font-quando);
 }
 
 @plugin "daisyui/theme" {
@@ -47,5 +50,6 @@
 }
 
 body {
+    font-family: var(--font-rubik), sans-serif;
     background-color: var(--color-epilogue-bg);
 }

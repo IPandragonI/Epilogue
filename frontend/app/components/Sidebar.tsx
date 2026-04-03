@@ -3,6 +3,7 @@
 import {useState} from "react";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
+import Image from "next/image";
 import {
     LayoutDashboard,
     FileText,
@@ -158,9 +159,7 @@ export default function Sidebar({isOpen}: { isOpen: boolean }) {
                 ${isOpen ? "w-56" : "w-14"}`}
         >
             <div className="flex items-center gap-2.5 px-4 h-16 border-b border-base-200 shrink-0">
-                <div className="w-7 h-7 rounded-lg bg-base-content flex items-center justify-center shrink-0">
-                    <span className="text-base-100 text-xs font-bold">É</span>
-                </div>
+                <Image src="/logo.png" alt="Logo" width={32} height={32}/>
                 {isOpen && (
                     <span className="font-bold text-lg tracking-tight whitespace-nowrap">
             Épilogue
