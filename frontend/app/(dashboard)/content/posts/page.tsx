@@ -1,8 +1,8 @@
 import Link from "next/link";
 import {ArrowUpDown, MoreHorizontal, ChevronLeft, ChevronRight, Plus} from "lucide-react";
 import {Content, Status} from "@/app/types/types";
-import StatusBadge from "@/app/components/common/StatusBadge";
-import ScoreBar from "@/app/components/common/ScoreBar";
+import StatusBadge from "@/app/components/content/StatusBadge";
+import ScoreBar from "@/app/components/content/ScoreBar";
 
 const CONTENTS: Content[] = [
     {

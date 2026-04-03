@@ -1,10 +1,10 @@
-import { Status, StatusType } from "@/app/types/types";
+import {Status, StatusType} from "@/app/types/types";
 
-function StatusBadge({ status }: { status: StatusType }) {
+function StatusBadge({status}: { status: StatusType }) {
     const styles: Record<StatusType, string> = {
         [Status.PUBLISHED]: "badge-success",
         [Status.DRAFT]: "badge-warning",
-        [Status.SYNCING]: "badge-info",
+        [Status.WAITING_PUBLISH]: "badge-info",
     };
 
     return (
