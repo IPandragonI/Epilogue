@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { buildTypeOrmConfig } from '../config/typeorm.config';
 import { AuthModule } from './auth/auth.module';
+import { AiModule } from './modules/ai/ai.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -14,7 +16,10 @@ import { AuthModule } from './auth/auth.module';
       useFactory: (configService: ConfigService) =>
         buildTypeOrmConfig(configService),
     }),
-    AuthModule],
+    AuthModule,
+    UsersModule,
+    AiModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
