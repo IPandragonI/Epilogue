@@ -1,0 +1,53 @@
+info:
+  name: create database on page
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: https://api.notion.com/v1/databases
+  headers:
+    - name: Notion-Version
+      value: " 2022-06-28"
+  body:
+    type: json
+    data: |-
+      {
+        "parent": {
+          "page_id": "33651886-0e98-80ff-b22b-d8963e8188aa"
+        },
+        "title": [
+          {
+            "type": "text",
+            "text": {
+              "content": "Ma base de données 🚀"
+            }
+          }
+        ],
+        "properties": {
+          "Name": {
+            "title": {}
+          },
+          "Status": {
+            "select": {
+              "options": [
+                { "name": "To Do", "color": "red" },
+                { "name": "In Progress", "color": "yellow" },
+                { "name": "Done", "color": "green" }
+              ]
+            }
+          },
+          "Date": {
+            "date": {}
+          }
+        }
+      }
+  auth:
+    type: bearer
+    token: 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
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

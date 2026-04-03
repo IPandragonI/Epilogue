@@ -1,27 +1,24 @@
 info:
-  name: "Create child page "
+  name: Add document on datasource
   type: http
-  seq: 1
+  seq: 2
 
 http:
   method: POST
-  url: https://api.notion.com/v1/pages
-  headers:
-    - name: Notion-Version
-      value: " 2022-06-28"
+  url: https://api.notion.com/v1/data_sources
   body:
     type: json
     data: |-
       {
         "parent": {
-          "page_id": "33651886-0e98-80ff-b22b-d8963e8188aa"
+          "database_id": "33751886-0e98-8121-833e-000b7f0abe2d"
         },
         "properties": {
-          "title": {
+          "Name": {
             "title": [
               {
                 "text": {
-                  "content": "Nouvelle page enfant 🚀"
+                  "content": "Mon document"
                 }
               }
             ]
@@ -30,7 +27,7 @@ http:
       }
   auth:
     type: bearer
-    token: Your notion api key
+    token: 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
 
 settings:
   encodeUrl: true

@@ -13,6 +13,33 @@ config:
         username: ""
         password: ""
       bypassProxy: ""
+
+request:
+  headers:
+    - name: Notion-Version
+      value: 2026-03-11
+  auth:
+    type: bearer
+    token: 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
+
+docs:
+  content: |+
+    Proccess pour créer des document
+
+    1. Créer une page vierge dans le notion en question
+
+    2. Créer une intégration qui pointe vers la page créé (https://www.notion.so/profile/integrations/internal) 
+
+
+    3. Récupérer la clé secrète de l'intégration interne
+
+    4. mettre la clé dans l'auth
+
+    5. Récupérer l'id de la page : prendre l'url de la page (exemple : https://www.notion.so/Epylogue-document-336518860e9880ffb22bd8963e8188aa) Récupérer l'identifiant après document et rajouter des - comme sur le modèle suivant : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      
+    6. Créer avec la requete 'create child page' en utilisant l'id créer avant comme id de page
+
+  type: text/markdown
 bundled: false
 extensions:
   bruno:

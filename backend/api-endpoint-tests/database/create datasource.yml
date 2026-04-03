@@ -1,0 +1,45 @@
+info:
+  name: create datasource
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: https://api.notion.com/v1/data_sources
+  body:
+    type: json
+    data: |-
+      {
+        "parent": {
+          "database_id": "33751886-0e98-819e-80fd-f5911cc87017"
+        },
+        "title": [{ "text": { "content": "My Data Source" } }],
+        "properties": {
+          "Name": { "title": {} },
+          "Status": {
+            "select": {
+              "options": [
+                { "name": "To Do", "color": "red" },
+                { "name": "Done", "color": "green" }
+              ]
+            }
+          },
+          "Remise": {
+            "select": {
+              "options": [
+                { "name": "10", "color": "red" },
+                { "name": "20", "color": "green" }
+              ]
+            }
+          }
+        }
+      }
+  auth:
+    type: bearer
+    token: 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
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
