@@ -68,6 +68,15 @@ export class AuthController {
       .send({ success: true });
   }
 
+  @Post('logout')
+  logout(@Res() reply: FastifyReply) {
+    return reply
+      .clearCookie('access_token', {
+        path: '/',
+      })
+      .send({ success: true });
+  }
+
   // ─── Google OAuth ─────────────────────────────────────────────────────────
   @Get('google')
   async googleLogin(@Req() req, @Res() reply) {

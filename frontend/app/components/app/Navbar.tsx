@@ -5,9 +5,10 @@ import { ChevronDown } from "lucide-react";
 
 interface NavbarProps {
     onToggleSidebar: () => void;
+    user: any;
 }
 
-export default function Navbar({ onToggleSidebar }: NavbarProps) {
+export default function Navbar({ onToggleSidebar, user }: NavbarProps) {
     return (
         <header className="h-16 shrink-0 bg-base-100 border-b border-base-200 flex items-center gap-4 px-4">
             <button
@@ -41,7 +42,9 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                             <span className="text-xs">DJ</span>
                         </div>
                     </div>
-                    <span className="text-sm font-medium hidden sm:block">Dupont Jean</span>
+                    <span className="text-sm font-medium hidden sm:block">
+                        {user ? `${user.firstname} ${user.lastname}` : "Invité"}
+                    </span>
                     <ChevronDown size={14} className="text-base-content/50" />
                 </label>
 
@@ -52,7 +55,21 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                     <li><a>Mon profil</a></li>
                     <li><a>Paramètres</a></li>
                     <li className="divider my-0" />
-                    <li><a className="text-error">Se déconnecter</a></li>
+                    <li>
+                        <button
+                            onClick={async () => {
+                                await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+                                    method: "POST",
+                                    credentials: "include",
+                                });
+
+                                window.location.href = "/login";
+                            }}
+                            className="text-error"
+                        >
+                            Se déconnecter
+                        </button>
+                    </li>
                 </ul>
             </div>
         </header>
