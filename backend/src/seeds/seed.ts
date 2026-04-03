@@ -90,14 +90,14 @@ async function seed() {
   const c1 = contentRepo.create({
     title: 'First post',
     body: 'Hello world',
-    contentType: 'article',
+    contentPlatform: PlatformEnum.BLOG,
     status: ContentStatusEnum.DRAFT,
     publishedDate: new Date(),
   });
   const c2 = contentRepo.create({
     title: 'Second post',
     body: 'More content',
-    contentType: 'article',
+    contentPlatform: PlatformEnum.LINKEDIN,
     status: ContentStatusEnum.DRAFT,
     createdAt: new Date(),
     updatedAt: new Date(),

@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ContentStatusEnum } from "./contentStatus.enum";
+import { PlatformEnum } from '../../content-idea/entities/platform.enum';
 
 
 @Entity('contents')
@@ -13,8 +14,12 @@ export class Content {
   @Column({ type: 'text' })
   body!: string;
 
-  @Column({ type: 'varchar', length: 100 })
-  contentType!: string;
+  @Column({
+    type: 'enum',
+    enum: PlatformEnum,
+    default: PlatformEnum.BLOG,
+  })
+  contentPlatform!: PlatformEnum;
 
   @Column({
     type: 'enum',
