@@ -1,12 +1,11 @@
 import { Topic } from "src/modules/topic/entities/topic.entity";
 import {
   Column,
-  CreateDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
+import { PlatformEnum } from './platform.enum';
 
 @Entity('content_ideas')
 export class ContentIdea {
@@ -31,4 +30,11 @@ export class ContentIdea {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt!: Date;
+
+  @Column({
+    type: 'enum',
+    enum: PlatformEnum,
+    default: PlatformEnum.LINKEDIN,
+  })
+  platform!: PlatformEnum;
 }

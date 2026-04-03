@@ -10,9 +10,9 @@ import { ContentIdea } from '../modules/content-idea/entities/content-idea.entit
 import { Content } from '../modules/content/entities/content.entity';
 import { UserRole } from '../modules/users/entities/userRole.enum';
 import { ContentStatusEnum } from '../modules/content/entities/contentStatus.enum';
-import { ContentNotionStatusEnum } from '../modules/content-notion/entities/contentNotionStatus.enum';
 import { ContentSeo } from '../modules/content-seo/entities/content-seo.entity';
 import { ContentNotion } from '../modules/content-notion/entities/content-notion.entity';
+import { PlatformEnum } from '../modules/content-idea/entities/platform.enum';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -43,7 +43,7 @@ async function seed() {
   const agency1 = agencyRepo.create({ name: 'Default Agency' });
   await agencyRepo.save(agency1);
 
-  console.log("=== ✅ Agencies seeded ===");
+  console.log('=== ✅ Agencies seeded ===');
   // Users
   const pw = await bcrypt.hash('password', 10);
   const admin = userRepo.create({
@@ -62,7 +62,7 @@ async function seed() {
   });
   await userRepo.save([admin, user]);
 
-  console.log("=== ✅ Users seeded ===");
+  console.log('=== ✅ Users seeded ===');
   // Topics
   const t1 = topicRepo.create({ name: 'Marketing' });
   const t2 = topicRepo.create({ name: 'Tech' });
@@ -75,11 +75,13 @@ async function seed() {
     title: 'Improve SEO',
     description: 'Ways to improve SEO',
     topic: t1,
+    platform: PlatformEnum.BLOG,
   });
   const idea2 = contentIdeaRepo.create({
     title: 'New Feature',
     description: 'Describe new feature ideas',
     topic: t2,
+    platform: PlatformEnum.LINKEDIN,
   });
   await contentIdeaRepo.save([idea1, idea2]);
 
@@ -109,7 +111,7 @@ async function seed() {
     score: 85,
     keywords: 'SEO, marketing, content',
     review: 'Good SEO score, but can be improved with more keywords.',
-    content: c1
+    content: c1,
   });
   const c2seo = contentSeoRepo.create({
     score: 10,
@@ -118,7 +120,6 @@ async function seed() {
     content: c2,
   });
   await contentSeoRepo.save([c1seo, c2seo]);
-
 
   console.log('\n=== ✅ Seeding completed successfully ===\n');
 
