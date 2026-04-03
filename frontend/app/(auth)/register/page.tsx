@@ -13,26 +13,43 @@ import Image from "next/image";
 
 export default function RegisterPage() {
     const router = useRouter();
+    const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [form, setForm] = useState({name: "", email: "", password: ""});
+    const [form, setForm] = useState({
+        firstname: "",
+        lastname: "",
+        email: "",
+        password: "",
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setError(null);
+
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(form),
-            });
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(form),
+                }
+            );
+
             const data = await res.json();
-            if (data.access_token) {
-                localStorage.setItem("access_token", data.access_token);
+
+            if (!res.ok) {
+                throw new Error(data.message || "Erreur lors de l'inscription");
+            }
+
+            if (data.success) {
                 router.push("/dashboard");
             }
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            setError(err.message);
         } finally {
             setIsLoading(false);
         }
@@ -82,15 +99,34 @@ export default function RegisterPage() {
                     <AuthDivider/>
 
                     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                        {error && (
+                            <div className="w-full p-3 rounded-lg bg-red-500/10 border border-red-500 text-red-500 text-sm">
+                                {error}
+                            </div>
+                        )}
                         <div className="flex flex-col gap-2">
                             <label className="text-primary text-sm font-bold">
-                                Nom complet
+                                Prénom
                             </label>
                             <input
                                 type="text"
-                                placeholder="Jean Dupont"
-                                value={form.name}
-                                onChange={(e) => setForm({...form, name: e.target.value})}
+                                placeholder="Jean"
+                                value={form.firstname}
+                                onChange={(e) => setForm({ ...form, firstname: e.target.value })}
+                                required
+                                className="w-full h-12 px-4 bg-base-100 border border-base-300 rounded-lg text-primary placeholder:text-neutral focus:outline-none focus:border-primary transition-colors"
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-primary text-sm font-bold">
+                                Nom
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Dupont"
+                                value={form.lastname}
+                                onChange={(e) => setForm({ ...form, lastname: e.target.value })}
                                 required
                                 className="w-full h-12 px-4 bg-base-100 border border-base-300 rounded-lg text-primary placeholder:text-neutral focus:outline-none focus:border-primary transition-colors"
                             />

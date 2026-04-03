@@ -1,7 +1,9 @@
 import {LayoutList, TrendingUp, Zap, ArrowUpDown, MoreHorizontal, ChevronLeft, ChevronRight} from "lucide-react";
 import {StatCard, Status, Content} from "@/app/types/types";
-import StatusBadge from "@/app/components/content/StatusBadge";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import ScoreBar from "@/app/components/content/ScoreBar";
+import StatusBadge from "@/app/components/content/StatusBadge";
 
 const STATS: StatCard[] = [
     {
@@ -55,7 +57,14 @@ const CONTENTS: Content[] = [
 ];
 
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token");
+
+    if (!token) {
+        redirect("/login");
+    }
+
     return (
         <div className="flex flex-col gap-6 max-w-full">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -11,4 +11,5 @@ export const buildTypeOrmConfig = (configService: ConfigService): TypeOrmModuleO
     autoLoadEntities: true,
     synchronize: true,
     charset: 'utf8mb4',
+    // dropSchema: true, // A ENLEVER EN PRODUCTION
 })

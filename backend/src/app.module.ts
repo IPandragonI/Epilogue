@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { buildTypeOrmConfig } from '../config/typeorm.config';
 import { AuthModule } from './auth/auth.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
 import { AiModule } from './modules/ai/ai.module';
 import { UsersModule } from './modules/users/users.module';
 import { ContentIdeaModule } from './modules/content-idea/content-idea.module';
@@ -17,7 +18,8 @@ import { ContentNotionModule } from './modules/content-notion/content-notion.mod
 import { ContentSeoModule } from './modules/content-seo/content-seo.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }),
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -25,6 +27,7 @@ import { ContentSeoModule } from './modules/content-seo/content-seo.module';
         buildTypeOrmConfig(configService),
     }),
     AuthModule,
+    AccountsModule,
     UsersModule,
     AiModule,
     AuthModule,
@@ -39,5 +42,4 @@ import { ContentSeoModule } from './modules/content-seo/content-seo.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {
-}
+export class AppModule {}

@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../modules/users/users.service';
-import { RegisterDto } from './dto/auth.dto';
-import { User } from '../modules/users/entities/user.entity';
-import { UserRole } from '../modules/users/entities/userRole.enum';
-import { AccountsService } from '../modules/accounts/accounts.controller';
+import { UsersService } from '../users/users.service';
+import { AccountsService } from './accounts.controller';
+import { RegisterDto } from '../../auth/dto/auth.dto';
+import { UserRole } from '../users/entities/userRole.enum';
+import { User } from '../users/entities/user.entity';
 
 export interface OAuthUserPayload {
   provider: string;
@@ -36,17 +36,15 @@ export class AuthService {
 
   // ─── Email / Password ────────────────────────────────────────────────────────
 
-  async register(dto: RegisterDto): Promise<User> {
+  async register(dto: RegisterDto): Promise<{ access_token: string }> {
     const existing = await this.usersService
       .findByEmail(dto.email)
       .catch(() => null);
-
     if (existing) {
       throw new BadRequestException('Un compte existe déjà avec cet email');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-
     const user = await this.usersService.create({
       firstname: dto.firstname,
       lastname: dto.lastname,
@@ -55,7 +53,7 @@ export class AuthService {
       role: UserRole.PUBLIC,
     });
 
-    return user;
+    return this.generateJwt(user);
   }
 
   async validateLocalUser(
@@ -69,8 +67,8 @@ export class AuthService {
     return isValid ? user : null;
   }
 
-  async login(user: User): Promise<User> {
-    return user;
+  async login(user: User): Promise<{ access_token: string }> {
+    return this.generateJwt(user);
   }
 
   // ─── OAuth ───────────────────────────────────────────────────────────────────
@@ -86,9 +84,22 @@ export class AuthService {
       // Met à jour les tokens et renvoie le user lié
       await this.accountsService.upsert({
         userId: existingAccount.userId,
-        ...payload,
+        provider: payload.provider,
+        providerAccountId: payload.providerAccountId,
+        access_token: payload.access_token,
+        refresh_token: payload.refresh_token ?? undefined,
+        expires_at: payload.expires_at ?? undefined,
+        token_type: payload.token_type,
+        scope: payload.scope,
+        id_token: payload.id_token ?? undefined,
       });
-      return this.usersService.findOne(existingAccount.userId);
+      const user = await this.usersService.findOne(existingAccount.userId);
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      return user;
     }
 
     // 2. Cherche si un user existe déjà avec cet email (connexion classique)
@@ -102,7 +113,7 @@ export class AuthService {
         firstname: payload.firstname,
         lastname: payload.lastname,
         email: payload.email,
-        password: null, // pas de mot de passe pour un user OAuth-only
+        password: null,
         role: UserRole.PUBLIC,
       });
     }
@@ -113,22 +124,24 @@ export class AuthService {
       provider: payload.provider,
       providerAccountId: payload.providerAccountId,
       access_token: payload.access_token,
-      refresh_token: payload.refresh_token,
-      expires_at: payload.expires_at,
+      refresh_token: payload.refresh_token ?? undefined,
+      expires_at: payload.expires_at ?? undefined,
       token_type: payload.token_type,
       scope: payload.scope,
-      id_token: payload.id_token,
+      id_token: payload.id_token ?? undefined,
     });
 
     return user;
   }
 
   // ─── JWT ─────────────────────────────────────────────────────────────────────
-  generateJwt(user: User): string {
-    return this.jwtService.sign({
+
+  generateJwt(user: User): { access_token: string } {
+    const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
-    });
+    };
+    return { access_token: this.jwtService.sign(payload) };
   }
 }
