@@ -94,9 +94,9 @@ export default function DashboardPage() {
                             <tr className="border-base-300 text-base-content/50 text-xs uppercase tracking-wide">
                                 <th className="font-medium pl-6">Titre</th>
                                 <th className="font-medium">
-                    <span className="flex items-center gap-1">
-                      Date <ArrowUpDown size={12}/>
-                    </span>
+                                <span className="flex items-center gap-1">
+                                  Date <ArrowUpDown size={12}/>
+                                </span>
                                 </th>
                                 <th className="font-medium">Score SEO</th>
                                 <th className="font-medium">Status</th>
