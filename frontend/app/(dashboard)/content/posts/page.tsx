@@ -10,7 +10,7 @@ const CONTENTS: Content[] = [
         title: "Guide SEO 2026 : Les tendances majeures",
         date: "1/11/2050",
         seo: {score: 92},
-        status: Status.PUBLISHED
+        status: Status.PUBLISHED,
     },
     {id: 2, title: "Stratégie content marketing B2B", date: "1/11/2050", seo: {score: 57}, status: Status.PUBLISHED},
     {

@@ -1,3 +1,5 @@
+import {Globe} from "lucide-react";
+
 export const Status = {
     PUBLISHED: "Publié",
     WAITING_PUBLISH: "En attente de publication",
@@ -23,11 +25,46 @@ export const Platform = {
 
 export type PlatformType = (typeof Platform)[keyof typeof Platform];
 
+export const PlatformConfig: Record<PlatformType, { label: string; subLabel: string; maxLength: number; icon: React.ReactNode; color: string; bg: string }> = {
+    [Platform.LINKEDIN]: {
+        label: "LinkedIn",
+        subLabel: "Post Pro & Carousel",
+        maxLength: 3000,
+        icon: <Globe size={14}/>,
+        color: "text-blue-700",
+        bg: "bg-blue-100",
+    },
+    [Platform.INSTAGRAM]: {
+        label: "Instagram",
+        subLabel: "Post & Story",
+        maxLength: 2200,
+        icon: <Globe size={14}/>,
+        color: "text-purple-700",
+        bg: "bg-purple-100",
+    },
+    [Platform.BLOG]: {
+        label: "Blog",
+        subLabel: "Article de blog",
+        maxLength: 5000,
+        icon: <Globe size={14}/>,
+        color: "text-yellow-700",
+        bg: "bg-yellow-100",
+    },
+    [Platform.TWITTER]: {
+        label: "Twitter",
+        subLabel: "Tweet & Thread",
+        maxLength: 280,
+        icon: <Globe size={14}/>,
+        color: "text-cyan-700",
+        bg: "bg-cyan-100",
+    },
+};
+
 export interface Content {
     id: number;
     title: string;
-    body: string;
-    contentType: string;
+    body?: string;
+    platform?: PlatformType;
     date: string;
     seo?: ContentSeo;
     status: StatusType;

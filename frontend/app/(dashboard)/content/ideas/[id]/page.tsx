@@ -1,12 +1,8 @@
 "use client";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
-import {
-    ArrowLeft,
-    Globe,
-    PenLine,
-} from "lucide-react";
-import {ContentIdea, Platform, PlatformType} from "@/app/types/types";
+import {ArrowLeft, PenLine} from "lucide-react";
+import {ContentIdea, Platform, PlatformConfig} from "@/app/types/types";
 
 const IDEA: ContentIdea = {
     id: 1,
@@ -16,32 +12,9 @@ const IDEA: ContentIdea = {
     description: "Le référencement évolue rapidement. Découvrez les stratégies SEO réellement efficaces en 2026 pour améliorer votre visibilité, attirer du trafic qualifié et rester compétitif face aux nouvelles exigences des moteurs de recherche. De l'importance du contenu de qualité à l'impact de l'IA, explorez les tendances clés qui façonnent le paysage du SEO et comment les intégrer dans votre stratégie digitale."
 };
 
-const PLATFORM_CONFIG: Record<PlatformType, { icon: React.ReactNode; color: string; bg: string }> = {
-    [Platform.LINKEDIN]: {
-        icon: <Globe size={14}/>,
-        color: "text-blue-700",
-        bg: "bg-blue-100",
-    },
-    [Platform.INSTAGRAM]: {
-        icon: <Globe size={14}/>,
-        color: "text-purple-700",
-        bg: "bg-purple-100",
-    },
-    [Platform.BLOG]: {
-        icon: <Globe size={14}/>,
-        color: "text-yellow-700",
-        bg: "bg-yellow-100",
-    },
-    [Platform.TWITTER]: {
-        icon: <Globe size={14}/>,
-        color: "text-cyan-700",
-        bg: "bg-cyan-100",
-    },
-};
-
 export default function IdeeDetailPage() {
     const router = useRouter();
-    const config = PLATFORM_CONFIG[IDEA.platform];
+    const config = PlatformConfig[IDEA.platform];
 
     const handleEdit = () => {
         router.push(`/content/writing?idea=${IDEA.id}`);

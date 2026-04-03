@@ -2,7 +2,7 @@ import Link from "next/link";
 import {CheckCircle2, XCircle, RefreshCw} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
 import ContentRenderer from "@/app/components/content/ContentRenderer";
-import {Content, NotionSyncStatus, Status} from "@/app/types/types";
+import {Content, NotionSyncStatus, Platform, Status} from "@/app/types/types";
 
 const CONTENT: Content = {
     id: 1,
@@ -13,6 +13,7 @@ const CONTENT: Content = {
         keywords: ["SEO", "IA", "Moteurs de recherche", "Tendances SEO 2026"]
     },
     date: "1/11/2050",
+    platform: Platform.LINKEDIN,
     status: Status.PUBLISHED,
     notion: {notionSyncStatus: NotionSyncStatus.SYNCED},
     body: `Le SEO n'a jamais été un terrain stable, mais 2026 marque un tournant encore plus net : entre l'essor de l'IA, les nouvelles attentes des utilisateurs et les mutations des moteurs de recherche, les règles du jeu évoluent rapidement.
@@ -67,7 +68,7 @@ export default function PostDetailPage() {
                         <span>Temps de lecture : {Math.ceil(countWords(CONTENT.body ?? '') / 200)} min</span>
                         <span className="flex items-center gap-1.5">
                             <RefreshCw size={11}/>
-                            {CONTENT.notion.notionSyncStatus}
+                            {CONTENT.notion?.notionSyncStatus}
                         </span>
                     </div>
                 </div>
@@ -81,14 +82,14 @@ export default function PostDetailPage() {
                             </div>
 
                             <div className="flex justify-center">
-                                <SeoScoreGauge score={CONTENT.seo.score}/>
+                                <SeoScoreGauge score={CONTENT.seo?.score ?? 0}/>
                             </div>
 
                             <div className="flex flex-col gap-3">
                                 <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">
                                     Optimisation
                                 </p>
-                                {parseReview(CONTENT.seo.review).map((opt) => (
+                                {CONTENT.seo && CONTENT.seo.review && parseReview(CONTENT.seo.review).map((opt) => (
                                     <div key={opt.title} className="flex items-start gap-2.5">
                                         {opt.ok ? (
                                             <CheckCircle2 size={16} className="text-success shrink-0 mt-0.5"/>
@@ -110,7 +111,7 @@ export default function PostDetailPage() {
                                     Nuage de mots clés
                                 </p>
                                 <div className="flex flex-wrap gap-2">
-                                    {CONTENT.seo.keywords.map((word) => (
+                                    {CONTENT.seo && CONTENT.seo.keywords && CONTENT.seo.keywords.map((word) => (
                                         <span key={word} className="badge badge-ghost text-xs">
                                             {word}
                                         </span>
