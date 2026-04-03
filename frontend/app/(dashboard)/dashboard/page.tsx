@@ -33,12 +33,12 @@ const STATS: StatCard[] = [
 ];
 
 const CONTENTS: Content[] = [
-    {id: 1, titre: "Guide SEO 2026 : Les tend...", date: "1/11/2050", scoreSeo: 92, status: "Publié"},
-    {id: 2, titre: "Stratégie content marketi...", date: "1/11/2050", scoreSeo: 57, status: "Publié"},
-    {id: 3, titre: "Top outils 10 IA pour copy...", date: "1/11/2050", scoreSeo: 86, status: "Brouillon"},
-    {id: 4, titre: "Comment optimiser son si...", date: "1/11/2050", scoreSeo: 24, status: "En cours de syncro"},
-    {id: 5, titre: "Les 10 erreurs à ne pas co...", date: "1/11/2050", scoreSeo: 58, status: "Publié"},
-    {id: 6, titre: "Mes blogs SEO préférés à...", date: "1/11/2050", scoreSeo: 88, status: "En cours de syncro"},
+    {id: 1, titre: "Guide SEO 2026 : Les tendances à suivre pour booster votre référencement", date: "1/11/2050", scoreSeo: 92, status: "Publié"},
+    {id: 2, titre: "Stratégie content marketing : Comment créer un calendrier éditorial efficace ?", date: "1/11/2050", scoreSeo: 57, status: "Publié"},
+    {id: 3, titre: "Top outils 10 IA pour copywriters en 2026", date: "1/11/2050", scoreSeo: 86, status: "Brouillon"},
+    {id: 4, titre: "Comment optimiser son site pour la recherche vocale en 2026 ?", date: "1/11/2050", scoreSeo: 24, status: "En cours de syncro"},
+    {id: 5, titre: "Les 10 erreurs à ne pas commettre en SEO en 2026", date: "1/11/2050", scoreSeo: 58, status: "Publié"},
+    {id: 6, titre: "Mes blogs SEO préférés à suivre en 2026", date: "1/11/2050", scoreSeo: 88, status: "En cours de syncro"},
 ];
 
 
@@ -107,7 +107,9 @@ export default function DashboardPage() {
                             {CONTENTS.map((content) => (
                                 <tr key={content.id} className="border-base-300 hover:bg-base-200 transition-colors">
                                     <td className="pl-6 font-medium text-sm max-w-xs truncate">
-                                        {content.titre}
+                                        <a href={`/contenu/posts/${content.id}`} className="hover:underline">
+                                            {content.titre}
+                                        </a>
                                     </td>
                                     <td className="text-sm text-base-content/50">{content.date}</td>
                                     <td className="text-sm font-medium">{content.scoreSeo}</td>
@@ -127,7 +129,7 @@ export default function DashboardPage() {
 
                     <div className="flex items-center justify-between px-6 py-4 border-t border-base-300">
                         <button className="btn btn-sm btn-outline rounded-full gap-1">
-                            <ChevronLeft size={14}/> Prev
+                            <ChevronLeft size={14}/> Précédent
                         </button>
 
                         <div className="join">
@@ -142,7 +144,7 @@ export default function DashboardPage() {
                         </div>
 
                         <button className="btn btn-sm btn-outline rounded-full gap-1">
-                            Next <ChevronRight size={14}/>
+                            Suivant <ChevronRight size={14}/>
                         </button>
                     </div>
 
