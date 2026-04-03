@@ -141,7 +141,7 @@ function NavLink({item, isOpen}: {
                 title={!isOpen ? item.label : undefined}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
                     ${isActive
-                    ? "bg-base-200 text-base-content font-semibold"
+                    ? "bg-base-400 text-accent font-semibold"
                     : "text-base-content/70 hover:bg-base-200 hover:text-base-content"}
                 `}
             >
