@@ -106,3 +106,20 @@ export interface StatCard {
     value: string;
     icon: React.ReactNode;
 }
+
+export interface CurationItems {
+    id: number;
+    title: string;
+    lastFetchedAt: string;
+    summary?: string;
+    source?: CurationSource;
+}
+
+export interface CurationSource {
+    id: number;
+    name: string;
+    sourceUrl: string;
+    sourceType: string;
+    lastFetchedAt: string;
+    createdAt: string;
+}

@@ -13,6 +13,8 @@ import { ContentStatusEnum } from '../modules/content/entities/contentStatus.enu
 import { ContentSeo } from '../modules/content-seo/entities/content-seo.entity';
 import { ContentNotion } from '../modules/content-notion/entities/content-notion.entity';
 import { PlatformEnum } from '../modules/content-idea/entities/platform.enum';
+import { CurationSource } from '../modules/curation-source/entities/curation-source.entity';
+import { CurationItem } from '../modules/curation-item/entities/curation-item.entity';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -29,6 +31,8 @@ async function seed() {
   const contentRepo = dataSource.getRepository(Content);
   const contentSeoRepo = dataSource.getRepository(ContentSeo);
   const contentNotionRepo = dataSource.getRepository(ContentNotion);
+  const curationSourceRepo = dataSource.getRepository(CurationSource);
+  const curationItemRepo = dataSource.getRepository(CurationItem);
 
   // Clean existing data (optional, be careful in prod)
   await dataSource.createQueryBuilder().delete().from(ContentIdea).execute();
@@ -38,6 +42,8 @@ async function seed() {
   await dataSource.createQueryBuilder().delete().from(Agency).execute();
   await dataSource.createQueryBuilder().delete().from(ContentSeo).execute();
   await dataSource.createQueryBuilder().delete().from(ContentNotion).execute();
+  await dataSource.createQueryBuilder().delete().from(CurationSource).execute();
+  await dataSource.createQueryBuilder().delete().from(CurationItem).execute();
 
   // Agencies
   const agency1 = agencyRepo.create({ name: 'Default Agency' });
@@ -120,6 +126,35 @@ async function seed() {
     content: c2,
   });
   await contentSeoRepo.save([c1seo, c2seo]);
+
+  const curationSource1 = curationSourceRepo.create({
+    name: 'TechCrunch',
+    sourceUrl: 'https://techcrunch.com',
+    sourceType: 'RSS',
+  });
+  const curationSource2 = curationSourceRepo.create({
+    name: 'FRESH NEWS',
+    sourceUrl: 'https://techcrunch.com',
+    sourceType: 'PDF',
+  });
+
+  await curationSourceRepo.save([curationSource1, curationSource2]);
+
+  const curationItem1 = curationItemRepo.create({
+    title: 'TechCrunch Article 1',
+    summary: 'Summary of TechCrunch Article 1',
+    source: curationSource1,
+    user: user,
+  });
+
+  const curationItem2 = curationItemRepo.create({
+    title: 'Fresh News Article 2',
+    summary: 'Summary of Fresh News Article 2',
+    source: curationSource2,
+    user: admin,
+  });
+
+  await curationItemRepo.save([curationItem1, curationItem2]);
 
   console.log('\n=== ✅ Seeding completed successfully ===\n');
 
