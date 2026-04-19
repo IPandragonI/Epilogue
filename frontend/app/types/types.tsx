@@ -123,3 +123,24 @@ export interface CurationSource {
     lastFetchedAt: string;
     createdAt: string;
 }
+
+export interface User {
+    id: string;
+    lastname: string;
+    firstname: string;
+    email: string;
+    password: string | null;
+    role: UserRole;
+    createdAt: string;
+    cloudSpace?: CloudSpace;
+}
+
+export enum UserRole {
+    ADMIN = "admin",
+    PUBLIC = "public",
+}
+
+export interface CloudSpace {
+    id: string;
+    notion_token: string
+}

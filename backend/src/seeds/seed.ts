@@ -15,6 +15,8 @@ import { ContentNotion } from '../modules/content-notion/entities/content-notion
 import { PlatformEnum } from '../modules/content-idea/entities/platform.enum';
 import { CurationSource } from '../modules/curation-source/entities/curation-source.entity';
 import { CurationItem } from '../modules/curation-item/entities/curation-item.entity';
+import { CloudSpaceModule } from '../modules/cloud-space/cloud-space.module';
+import { CloudSpace } from '../modules/cloud-space/entities/cloud-space.entity';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -33,17 +35,22 @@ async function seed() {
   const contentNotionRepo = dataSource.getRepository(ContentNotion);
   const curationSourceRepo = dataSource.getRepository(CurationSource);
   const curationItemRepo = dataSource.getRepository(CurationItem);
+  const cloudSpaceRepo = dataSource.getRepository(CloudSpace);
 
   // Clean existing data (optional, be careful in prod)
+  // Delete child tables first to avoid FK constraint errors
+  await dataSource.createQueryBuilder().delete().from(CurationItem).execute();
+  await dataSource.createQueryBuilder().delete().from(CurationSource).execute();
+  await dataSource.createQueryBuilder().delete().from(ContentSeo).execute();
+  await dataSource.createQueryBuilder().delete().from(ContentNotion).execute();
   await dataSource.createQueryBuilder().delete().from(ContentIdea).execute();
   await dataSource.createQueryBuilder().delete().from(Content).execute();
   await dataSource.createQueryBuilder().delete().from(Topic).execute();
+  // Users should be deleted after entities that reference them (e.g. curation_items)
   await dataSource.createQueryBuilder().delete().from(User).execute();
   await dataSource.createQueryBuilder().delete().from(Agency).execute();
-  await dataSource.createQueryBuilder().delete().from(ContentSeo).execute();
-  await dataSource.createQueryBuilder().delete().from(ContentNotion).execute();
-  await dataSource.createQueryBuilder().delete().from(CurationSource).execute();
-  await dataSource.createQueryBuilder().delete().from(CurationItem).execute();
+  // CloudSpace last
+  await dataSource.createQueryBuilder().delete().from(CloudSpace).execute();
 
   // Agencies
   const agency1 = agencyRepo.create({ name: 'Default Agency' });
@@ -58,6 +65,9 @@ async function seed() {
     email: 'admin@example.com',
     password: pw,
     role: UserRole.ADMIN,
+    cloudSpace: cloudSpaceRepo.create({
+      notionToken: 'notion-token',
+    }),
   });
   const user = userRepo.create({
     firstname: 'John',
@@ -65,6 +75,9 @@ async function seed() {
     email: 'user@example.com',
     password: pw,
     role: UserRole.PUBLIC,
+    cloudSpace: cloudSpaceRepo.create({
+      notionToken: 'notion-token',
+    }),
   });
   await userRepo.save([admin, user]);
 

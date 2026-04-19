@@ -2,26 +2,35 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import { UserRole } from './entities/userRole.enum';
+import { UpdateCloudSpaceDto } from '../cloud-space/dto/update-cloud-space.dto';
+import * as bcrypt from 'bcrypt';
+import { CloudSpace } from '../cloud-space/entities/cloud-space.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(CloudSpace)
+    private cloudSpaceRepository: Repository<CloudSpace>,
   ) {}
 
   create(user: Partial<User>): Promise<User> {
     return this.userRepository.save(user as User);
   }
 
+  // Retourne les users en incluant la relation cloudSpace
   findAll(): Promise<User[]> {
-    return this.userRepository.find();
+    return this.userRepository.find({ relations: ['cloudSpace'] });
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.userRepository.findOneBy({ id });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['cloudSpace'],
+    });
 
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -30,30 +39,53 @@ export class UsersService {
     return user;
   }
 
-  findByEmail(email: string): Promise<User | null> {
-    const user = this.userRepository.findOneBy({ email });
-    if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
-    }
-    return user;
+  // renvoie null si non trouvé — utile côté auth/login
+  async findByEmail(email: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['cloudSpace'],
+    });
+    return user ?? null;
   }
 
   async update(
     id: string,
     updateUserDto: UpdateUserDto,
-    user: { id: string; role: UserRole },
-  ): Promise<User> {
-    const userToUpdate = await this.userRepository.findOneBy({ id });
-    if (!userToUpdate) {
-      throw new NotFoundException(`User with id ${id} not found`);
+  ): Promise<UpdateResult> {
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
-    if (user.id !== id) {
-      throw new NotFoundException(
-        `You do not have permission to update this user`,
-      );
+    return await this.userRepository.update(id, updateUserDto);
+  }
+
+  async updateCloudSpace(
+    userId: string,
+    updateCloudSpace: UpdateCloudSpaceDto,
+  ): Promise<UpdateResult> {
+    // Find the user with current cloudSpace relation
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['cloudSpace'],
+    });
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
     }
-    Object.assign(userToUpdate, updateUserDto);
-    return await this.userRepository.save(userToUpdate);
+
+    // If cloudSpace exists, update it
+    if (user.cloudSpace) {
+      Object.assign(user.cloudSpace, updateCloudSpace);
+      await this.cloudSpaceRepository.save(user.cloudSpace);
+      return { affected: 1 } as any;
+    }
+
+    // Otherwise, create a new CloudSpace and associate it to the user
+    const newCs = this.cloudSpaceRepository.create({
+      notionToken: (updateCloudSpace as any).notionToken,
+    });
+    const saved = await this.cloudSpaceRepository.save(newCs);
+    user.cloudSpace = saved;
+    await this.userRepository.save(user);
+    return { affected: 1 } as any;
   }
 
   async remove(id: string, user: { id: string; role: UserRole }) {

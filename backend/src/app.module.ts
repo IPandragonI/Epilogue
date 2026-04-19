@@ -16,6 +16,7 @@ import { CurationItemModule } from './modules/curation-item/curation-item.module
 import { CurationSourceModule } from './modules/curation-source/curation-source.module';
 import { ContentNotionModule } from './modules/content-notion/content-notion.module';
 import { ContentSeoModule } from './modules/content-seo/content-seo.module';
+import { CloudSpaceModule } from './modules/cloud-space/cloud-space.module';
 
 @Module({
   imports: [
@@ -38,7 +39,9 @@ import { ContentSeoModule } from './modules/content-seo/content-seo.module';
     CurationSourceModule,
     CurationItemModule,
     ContentNotionModule,
-    ContentSeoModule],
+    ContentSeoModule,
+    CloudSpaceModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -1,0 +1,21 @@
+info:
+  name: update notion token
+  type: http
+  seq: 4
+
+http:
+  method: PATCH
+  url: http://localhost:5000/api/users/3d1fbb9d-33d5-40b9-a787-b9b0c7b2305d/notion
+  body:
+    type: json
+    data: |-
+      {
+        "notionToken": "testtest"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

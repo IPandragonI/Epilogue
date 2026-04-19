@@ -1,10 +1,12 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
+  JoinColumn,
 } from 'typeorm';
 import { UserRole } from './userRole.enum';
+import { CloudSpace } from '../../cloud-space/entities/cloud-space.entity';
 
 @Entity('users')
 export class User {
@@ -28,4 +30,8 @@ export class User {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
+
+  @OneToOne(() => CloudSpace, { cascade: true })
+  @JoinColumn()
+  cloudSpace: CloudSpace | null;
 }
