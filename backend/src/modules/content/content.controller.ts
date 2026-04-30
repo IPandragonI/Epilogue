@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ContentService } from './content.service';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
@@ -20,6 +29,19 @@ export class ContentController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.contentService.findOne(id);
+  }
+
+  @Get('with-seo')
+  findAllWithSEO() {
+    return this.contentService.findAllWithSEO();
+  }
+
+  @Get('with-seo-paginated')
+  findAllWithSeoPaginated(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.contentService.findAllWithSeoPaginated(+page, +limit);
   }
 
   @Patch(':id')

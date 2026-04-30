@@ -1,12 +1,14 @@
 import {Globe} from "lucide-react";
-
-export const Status = {
-    PUBLISHED: "Publié",
-    WAITING_PUBLISH: "En attente de publication",
-    DRAFT: "Brouillon",
-} as const;
-
-export type StatusType = (typeof Status)[keyof typeof Status];
+export enum ContentStatus {
+    PUBLISHED = "PUBLISHED",
+    DRAFT = "DRAFT",
+    WAITING_PUBLISH = "WAITING_PUBLISH",
+}
+export const StatusLabels: Record<ContentStatus, string> = {
+    [ContentStatus.PUBLISHED]: "Publié",
+    [ContentStatus.DRAFT]: "Brouillon",
+    [ContentStatus.WAITING_PUBLISH]: "En attente",
+};
 
 export const NotionSyncStatus = {
     SYNCED: "Synchronisé avec Notion",
@@ -64,10 +66,10 @@ export interface Content {
     id: number;
     title: string;
     body?: string;
-    platform?: PlatformType;
+    contentPlatform?: PlatformType;
     date: string;
     seo?: ContentSeo;
-    status: StatusType;
+    status: ContentStatus;
     notion?: ContentNotion;
 }
 

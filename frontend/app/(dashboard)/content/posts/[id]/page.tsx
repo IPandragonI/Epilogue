@@ -13,7 +13,7 @@ const CONTENT: Content = {
         keywords: ["SEO", "IA", "Moteurs de recherche", "Tendances SEO 2026"]
     },
     date: "1/11/2050",
-    platform: Platform.LINKEDIN,
+    contentPlatform: Platform.LINKEDIN,
     status: Status.PUBLISHED,
     notion: {notionSyncStatus: NotionSyncStatus.SYNCED},
     body: `Le SEO n'a jamais été un terrain stable, mais 2026 marque un tournant encore plus net : entre l'essor de l'IA, les nouvelles attentes des utilisateurs et les mutations des moteurs de recherche, les règles du jeu évoluent rapidement.

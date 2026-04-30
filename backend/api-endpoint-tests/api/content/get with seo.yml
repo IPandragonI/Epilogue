@@ -1,11 +1,11 @@
 info:
-  name: get user
+  name: get with seo
   type: http
   seq: 2
 
 http:
   method: GET
-  url: "{{baseUrl}}/users"
+  url: "{{baseUrl}}/content/with-seo"
   auth: inherit
 
 settings:

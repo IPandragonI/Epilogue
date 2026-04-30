@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Content } from '../../content/entities/content.entity';
 
 @Entity('content_seo')
@@ -26,6 +26,6 @@ export class ContentSeo {
   })
   updatedAt!: Date;
 
-  @OneToOne(() => Content, (content) => content.id, { cascade: true })
+  @OneToOne(() => Content, (content) => content.seo)
   content!: Content;
 }
