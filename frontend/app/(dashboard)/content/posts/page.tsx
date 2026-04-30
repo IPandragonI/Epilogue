@@ -49,10 +49,10 @@ export default function PostsPage() {
 
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold font-display">Mes posts</h1>
-                <button className="btn btn-accent btn-sm gap-2 rounded-full px-4">
+                <Link className="btn btn-accent btn-sm gap-2 rounded-full px-4" href={'/content/writing'}>
                     <Plus size={15}/>
                     Nouveau post
-                </button>
+                </Link>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
