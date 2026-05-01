@@ -1,0 +1,15 @@
+info:
+  name: "get curation items "
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: http://localhost:5000/api/users/3d1fbb9d-33d5-40b9-a787-b9b0c7b2305d/curation-items
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

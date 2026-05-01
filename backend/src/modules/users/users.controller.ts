@@ -7,6 +7,7 @@ import { JwtAuthGuard } from 'src/auth/guards/auth.guards';
 import { Roles } from 'src/auth/decorators/auth.decorators';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateCloudSpaceDto } from '../cloud-space/dto/update-cloud-space.dto';
+import { CurationItemService } from '../curation-item/curation-item.service';
 
 @ApiBearerAuth()
 @Controller('users')
@@ -75,5 +76,14 @@ export class UsersController {
     @Body() updateCloudSpace: UpdateCloudSpaceDto,
   ) {
     return await this.usersService.updateCloudSpace(id, updateCloudSpace);
+  }
+
+  @Get(':id/curation-items')
+  @ApiOperation({
+    summary: 'Get Curations items for a user',
+    description: 'Retrieve the curation items with the user and his id.',
+  })
+  async getCurationItemsByUser(@Param('id') id: string) {
+    return await this.usersService.getCurationItemsByUserId(id);
   }
 }

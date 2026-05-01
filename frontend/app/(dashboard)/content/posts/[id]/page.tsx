@@ -2,7 +2,7 @@ import Link from "next/link";
 import {CheckCircle2, XCircle, RefreshCw} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
 import ContentRenderer from "@/app/components/content/ContentRenderer";
-import {Content, NotionSyncStatus, Platform, Status} from "@/app/types/types";
+import {Content, NotionSyncStatus, Platform, ContentStatus} from "@/app/types/types";
 
 const CONTENT: Content = {
     id: 1,
@@ -14,7 +14,7 @@ const CONTENT: Content = {
     },
     date: "1/11/2050",
     contentPlatform: Platform.LINKEDIN,
-    status: Status.PUBLISHED,
+    status: ContentStatus.PUBLISHED,
     notion: {notionSyncStatus: NotionSyncStatus.SYNCED},
     body: `Le SEO n'a jamais été un terrain stable, mais 2026 marque un tournant encore plus net : entre l'essor de l'IA, les nouvelles attentes des utilisateurs et les mutations des moteurs de recherche, les règles du jeu évoluent rapidement.
 Pour rester visible, il ne suffit plus d'optimiser des mots-clés — il faut comprendre l'écosystème global de la recherche.

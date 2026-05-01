@@ -1,0 +1,29 @@
+info:
+  name: create
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:5000/api/curation-item
+  body:
+    type: json
+    data: |-
+      {
+          "title": "Billets pour le Grand Prix Auvergne-Rhône-Alpes 2026",
+          "summary": "Le document contient deux billets électroniques pour le Grand Prix Auvergne-Rhône-Alpes 2026, qui se déroulera le samedi 24 octobre 2026 à 13h00 à la LDLC Arena à Décines-Charpieu. Les billets sont de catégorie 2, niveau 2, bloc 209, rang L, places 318 et 319. Chaque billet coûte 58,00 euros et est au nom de Valentin GELLY, avec l'identifiant client 47915548. Les billets incluent des frais de location et sont valables pour l'entrée dans la Grand Hall.",
+        
+          "userId": "d13c9930-2a84-4ca8-862f-afe63b1d29d5",
+          "source": {
+              "name": "mTicket_416130677_4a31d1c9496d1dd273d3b57b7634605b.pdf",
+              "sourceType": "PDF",
+              "sourceUrl": "mTicket_416130677_4a31d1c9496d1dd273d3b57b7634605b.pdf"
+          }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

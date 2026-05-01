@@ -1,8 +1,26 @@
-import { CurationSource } from "src/modules/curation-source/entities/curation-source.entity";
+import {
+  IsNotEmpty,
+  IsString,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { CreateCurationSourceDto } from '../../curation-source/dto/create-curation-source.dto';
 
 export class CreateCurationItemDto {
-    title!: string;
-    summary!: string;
-    author?: string;
-    source!: CurationSource;
+  @IsNotEmpty()
+  @IsString()
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  summary?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  userId!: string;
+
+  @ValidateNested()
+  @Type(() => CreateCurationSourceDto)
+  source!: CreateCurationSourceDto;
 }

@@ -7,6 +7,7 @@ import { UserRole } from './entities/userRole.enum';
 import { UpdateCloudSpaceDto } from '../cloud-space/dto/update-cloud-space.dto';
 import * as bcrypt from 'bcrypt';
 import { CloudSpace } from '../cloud-space/entities/cloud-space.entity';
+import { CurationItem } from '../curation-item/entities/curation-item.entity';
 
 @Injectable()
 export class UsersService {
@@ -15,6 +16,8 @@ export class UsersService {
     private userRepository: Repository<User>,
     @InjectRepository(CloudSpace)
     private cloudSpaceRepository: Repository<CloudSpace>,
+    @InjectRepository(CurationItem)
+    private curationItemRepository: Repository<CurationItem>,
   ) {}
 
   create(user: Partial<User>): Promise<User> {
@@ -100,5 +103,18 @@ export class UsersService {
     }
     await this.userRepository.remove(userToRemove);
     return { deleted: true };
+  }
+
+  getCurationItemsByUserId(id: string) {
+    return this.curationItemRepository.find({
+      where: {
+        user: {
+          id: id,
+        },
+      },
+      relations: {
+        source: true,
+      },
+    });
   }
 }

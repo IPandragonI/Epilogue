@@ -146,3 +146,14 @@ export interface CloudSpace {
     id: string;
     notion_token: string
 }
+
+export interface CreateCurationItemDto {
+    title: string;
+    summary?: string;
+    userId: string;
+    source: {
+        name: string;
+        sourceUrl: string;
+        sourceType: string;
+    };
+}

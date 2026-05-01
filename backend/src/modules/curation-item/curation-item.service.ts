@@ -4,24 +4,44 @@ import { UpdateCurationItemDto } from './dto/update-curation-item.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CurationItem } from './entities/curation-item.entity';
+import { CurationSource } from '../curation-source/entities/curation-source.entity';
 
 @Injectable()
 export class CurationItemService {
   constructor(
     @InjectRepository(CurationItem)
-    private curationItemRepository: Repository<CurationItem>) {
-  }
+    private curationItemRepository: Repository<CurationItem>,
+    @InjectRepository(CurationSource)
+    private curationSourceRepository: Repository<CurationSource>,
+  ) {}
 
-  create(createCurationItemDto: CreateCurationItemDto) {
-    return this.curationItemRepository.save(createCurationItemDto);
+  async create(createCurationItemDto: CreateCurationItemDto) {
+    const sourceSaved = await this.curationSourceRepository.save(
+      createCurationItemDto.source,
+    );
+
+    const toSave: any = {
+      title: String(createCurationItemDto.title),
+      summary: String(createCurationItemDto.summary),
+      user: { id: String(createCurationItemDto.userId) },
+      source: sourceSaved,
+    };
+
+    return this.curationItemRepository.save(toSave);
   }
 
   findAll() {
-    return this.curationItemRepository.find();
+    return this.curationItemRepository.find({
+      relations: ['source', 'user'],
+      order: { source: { createdAt: 'DESC' } },
+    });
   }
 
   findOne(id: string) {
-    return this.curationItemRepository.findOneBy({ id });
+    return this.curationItemRepository.findOne({
+      where: { id },
+      relations: ['source', 'user'],
+    });
   }
 
   update(id: string, updateCurationItemDto: UpdateCurationItemDto) {

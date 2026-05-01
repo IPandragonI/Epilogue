@@ -1,0 +1,7 @@
+info:
+  name: ai
+  type: folder
+  seq: 4
+
+request:
+  auth: inherit

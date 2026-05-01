@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { CurationItemService } from './curation-item.service';
 import { CreateCurationItemDto } from './dto/create-curation-item.dto';
 import { UpdateCurationItemDto } from './dto/update-curation-item.dto';
@@ -23,7 +31,10 @@ export class CurationItemController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCurationItemDto: UpdateCurationItemDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCurationItemDto: UpdateCurationItemDto,
+  ) {
     return this.curationItemService.update(id, updateCurationItemDto);
   }
 

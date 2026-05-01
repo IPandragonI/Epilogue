@@ -2,13 +2,19 @@
 
 import { useState, useRef, useCallback } from "react";
 import { X, Link, Rss, FileText, Zap, Upload } from "lucide-react";
+import {useAuth} from "@/app/hooks/useAuth";
+import {CreateCurationItemDto} from "@/app/types/types";
 
 type TabType = "url" | "rss" | "file";
 
 interface AddResourceModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit?: (data: ResourceFormData) => void;
+    // onSubmit receives optional result object with success/message/item
+    onSubmit?: (
+        data: ResourceFormData,
+        result?: { success: boolean; message?: string; item?: any },
+    ) => void;
 }
 
 export interface ResourceFormData {
@@ -25,14 +31,20 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: "file", label: "Fichier (PDF/Doc)", icon: <FileText size={14} strokeWidth={1.8} /> },
 ];
 
-export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResourceModalProps) {
+export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalProps) {
+    const { user, loading } = useAuth();
     const [activeTab, setActiveTab] = useState<TabType>("url");
     const [url, setUrl] = useState("");
     const [rssUrl, setRssUrl] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [useAsContext, setUseAsContext] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    // upload states
+    const [uploadLoading, setUploadLoading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [uploadResult, setUploadResult] = useState<{ title: string; summary: string } | null>(null);
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -53,7 +65,90 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
         if (selected) setFile(selected);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        // If the user selected the File tab and we have a PDF, upload it to the AI endpoint
+        if (activeTab === "file" && file) {
+            // If it's a PDF, call the /api/ai/upload endpoint
+            if (file.type === "application/pdf" || file.name.toLowerCase().endsWith('.pdf')) {
+                setUploadLoading(true);
+                setUploadError(null);
+                setUploadResult(null);
+                try {
+                    const form = new FormData();
+                    form.append('file', file);
+
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/ai/upload`, {
+                        method: 'POST',
+                        body: form,
+                        credentials: 'include',
+                    });
+
+                    const json = await res.json().catch(() => null);
+                    if (!res.ok) {
+                        const err = json?.message || json || 'Upload failed';
+                        const errMsg = typeof err === 'string' ? err : JSON.stringify(err);
+                        setUploadError(errMsg);
+                        onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                        return;
+                    }
+
+                    if (json) {
+                        setUploadResult({title: json.title ?? file.name, summary: json.summary ?? ''});
+
+                        const body : CreateCurationItemDto = {
+                            title: String(json.title ?? file.name),
+                            summary: String(json.summary ?? ''),
+                            userId: String(user.id),
+                            source: {
+                                name: String(json.fileName),
+                                sourceType: "PDF",
+                                sourceUrl: String(file.name),
+
+                            }
+                        }
+
+                        const res2 = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/curation-item`, {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify(body),
+                            credentials: 'include',
+                        });
+
+                        const res2Json = await res2.json().catch(() => null);
+
+                        if (!res2.ok) {
+                            const errMsg = res2Json?.message ? (Array.isArray(res2Json.message) ? res2Json.message.join(', ') : res2Json.message) : `Erreur ${res2.status}`;
+                            setUploadError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+                            onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                        } else {
+                            // success: forward result and created item
+                            onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: true, message: 'Ressource créée', item: res2Json });
+                        }
+
+                    } else {
+                        const errMsg = 'Upload succeeded but no data returned';
+                        setUploadError(errMsg);
+                        onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                    }
+                } catch (e: unknown) {
+                    const err = e as Error;
+                    const errMsg = err?.message ?? String(e);
+                    setUploadError(errMsg);
+                    onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                } finally {
+                    setUploadLoading(false);
+                }
+                return;
+            }
+
+            // non-PDF files: just forward to parent for handling
+            onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext});
+            return;
+        }
+
+        // URL or RSS tabs: forward values (no server-created item here)
         onSubmit?.({
             tab: activeTab,
             url: activeTab === "url" ? url : undefined,
@@ -93,7 +188,7 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
                 {/* ── Header ── */}
                 <div className="px-5 sm:px-6 pt-5 pb-3 shrink-0">
                     {/* Mobile drag handle */}
-                    <div className="sm:hidden w-10 h-1 rounded-full bg-base-content/20 mx-auto mb-4" />
+                    <div className="sm:hidden w-10 h-1 rounded-full bg-base-content/20 mx-auto mb-4"/>
 
                     <div className="flex items-start justify-between">
                         <div>
@@ -108,7 +203,7 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
                             onClick={onClose}
                             className="btn btn-ghost btn-xs btn-square mt-0.5 shrink-0"
                         >
-                            <X size={16} />
+                            <X size={16}/>
                         </button>
                     </div>
 
@@ -154,7 +249,7 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
                                         className="input input-bordered input-sm flex-1 text-sm min-w-0"
                                     />
                                     <button className="btn btn-sm btn-neutral gap-1.5 shrink-0">
-                                        <Zap size={13} strokeWidth={2} />
+                                        <Zap size={13} strokeWidth={2}/>
                                         <span className="hidden xs:inline">Récupérer</span>
                                     </button>
                                 </div>
@@ -192,7 +287,7 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
                                     className="input input-bordered input-sm flex-1 text-sm min-w-0"
                                 />
                                 <button className="btn btn-sm btn-neutral gap-1.5 shrink-0">
-                                    <Zap size={13} strokeWidth={2} />
+                                    <Zap size={13} strokeWidth={2}/>
                                     <span className="hidden xs:inline">Récupérer</span>
                                 </button>
                             </div>
@@ -214,11 +309,28 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
                                 onFileChange={handleFileChange}
                                 fileInputRef={fileInputRef}
                             />
+
+                            {/* Upload status / result */}
+                            {uploadLoading && (
+                                <p className="text-xs text-base-content/60 mt-2">Envoi du fichier…</p>
+                            )}
+                            {uploadError && (
+                                <p className="text-xs text-red-500 mt-2">Erreur : {uploadError}</p>
+                            )}
+                            {uploadResult && (
+                                <div className="mt-2 p-3 bg-base-200 rounded">
+                                    <p className="text-sm font-semibold">Titre détecté</p>
+                                    <p className="text-sm">{uploadResult.title}</p>
+                                    <p className="text-sm font-semibold mt-2">Résumé</p>
+                                    <p className="text-sm text-base-content/70">{uploadResult.summary}</p>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* Use as immediate context checkbox */}
-                    <label className="flex items-start gap-3 bg-base-100 border border-base-300 rounded-lg px-4 py-3 cursor-pointer hover:bg-base-200 transition-colors">
+                    <label
+                        className="flex items-start gap-3 bg-base-100 border border-base-300 rounded-lg px-4 py-3 cursor-pointer hover:bg-base-200 transition-colors">
                         <input
                             type="checkbox"
                             checked={useAsContext}
@@ -230,14 +342,15 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
                                 Utiliser comme contexte immédiat
                             </p>
                             <p className="text-xs text-base-content/50 mt-0.5">
-                                L'IA analysera cette ressource pour vos prochaines créations de contenu.
+                                L&apos;IA analysera cette ressource pour vos prochaines créations de contenu.
                             </p>
                         </div>
                     </label>
                 </div>
 
                 {/* ── Footer ── */}
-                <div className="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-black bg-accent-content/30 shrink-0">
+                <div
+                    className="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-black bg-accent-content/30 shrink-0">
                     <button
                         onClick={onClose}
                         className="btn btn-ghost btn-sm"
@@ -247,6 +360,7 @@ export default function NewResourceModal({ isOpen, onClose, onSubmit }: AddResou
                     <button
                         onClick={handleSubmit}
                         className="btn btn-neutral btn-sm gap-2"
+                        disabled={uploadLoading || loading}
                     >
                         Ajouter la ressource
                         <span className="text-base leading-none">+</span>
@@ -267,7 +381,7 @@ interface DropZoneProps {
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragLeave: () => void;
     onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 function DropZone({ file, isDragging, onDrop, onDragOver, onDragLeave, onFileChange, fileInputRef }: DropZoneProps) {
@@ -301,7 +415,7 @@ function DropZone({ file, isDragging, onDrop, onDragOver, onDragLeave, onFileCha
                         Glissez-déposez vos fichiers
                     </p>
                     <p className="text-xs text-base-content/50 text-center">
-                        PDF, DOCX ou TXT jusqu'à 20MB
+                        PDF, DOCX ou TXT jusqu&apos;à 20MB
                     </p>
                 </>
             )}
