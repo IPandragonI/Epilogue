@@ -22,14 +22,9 @@ function getIconForSourceType(sourceType?: string) {
     switch (type) {
         case "RSS":
             return <Rss {...commonProps} color="red" />;
-        case "NEWS":
-        case "ARTICLE":
         case "NEWSPAPER":
             return <Newspaper {...commonProps} color="green" />;
-        case "SITE":
-        case "WEBSITE":
-        case "WEB":
-        case "LINK":
+        case "URL":
             return <Link {...commonProps} color="orange" />;
         default:
             return <FileText {...commonProps} color="blue" />;
