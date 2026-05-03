@@ -1,10 +1,5 @@
-import { Topic } from "src/modules/topic/entities/topic.entity";
-import {
-  Column,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Topic } from 'src/modules/topic/entities/topic.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { PlatformEnum } from './platform.enum';
 
 @Entity('content_ideas')
@@ -34,7 +29,7 @@ export class ContentIdea {
   @Column({
     type: 'enum',
     enum: PlatformEnum,
-    default: PlatformEnum.LINKEDIN,
+    default: PlatformEnum.DRAFT,
   })
   platform!: PlatformEnum;
 }

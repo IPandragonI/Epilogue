@@ -66,9 +66,7 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
     };
 
     const handleSubmit = async () => {
-        // If the user selected the File tab and we have a PDF, upload it to the AI endpoint
         if (activeTab === "file" && file) {
-            // If it's a PDF, call the /api/ai/upload endpoint
             if (file.type === "application/pdf" || file.name.toLowerCase().endsWith('.pdf')) {
                 setUploadLoading(true);
                 setUploadError(null);
@@ -76,7 +74,6 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 try {
                     const form = new FormData();
                     form.append('file', file);
-
                     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/ai/upload`, {
                         method: 'POST',
                         body: form,
@@ -144,6 +141,82 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
             }
 
             // non-PDF files: just forward to parent for handling
+            onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext});
+            return;
+        }else if (activeTab === "url" && url) {
+            console.log("test url")
+            setUploadLoading(true);
+            setUploadError(null);
+            setUploadResult(null);
+            try {
+                const trimmed = (url || '').trim();
+                if (!trimmed) return;
+
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/ai/generate-from-website`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: trimmed }),
+                });
+
+                const json = await res.json().catch(() => null);
+                const data = json.data;
+
+                if (!res.ok) {
+                    const err = data?.message || json || 'Scan failed';
+                    const errMsg = typeof err === 'string' ? err : JSON.stringify(err);
+                    setUploadError(errMsg);
+                    onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                    return;
+                }
+
+                if (data) {
+                    setUploadResult({title: data.title, summary: data.summary});
+
+                    const body : CreateCurationItemDto = {
+                        title: String(data.title),
+                        summary: String(data.summary),
+                        userId: String(user.id),
+                        source: {
+                            name: String(data.fileName),
+                            sourceType: "URL",
+                            sourceUrl: url,
+                        }
+                    }
+
+                    const res2 = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/curation-item`, {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(body),
+                        credentials: 'include',
+                    });
+
+                    const res2Json = await res2.json().catch(() => null);
+
+                    if (!res2.ok) {
+                        const errMsg = res2Json?.message ? (Array.isArray(res2Json.message) ? res2Json.message.join(', ') : res2Json.message) : `Erreur ${res2.status}`;
+                        setUploadError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+                        onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                    } else {
+                        // success: forward result and created item
+                        onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: true, message: 'Ressource créée', item: res2Json });
+                    }
+
+                } else {
+                    const errMsg = 'Upload succeeded but no data returned';
+                    setUploadError(errMsg);
+                    onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                }
+            } catch (e: unknown) {
+                const err = e as Error;
+                const errMsg = err?.message ?? String(e);
+                setUploadError(errMsg);
+                onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+            } finally {
+                setUploadLoading(false);
+            }
+
             onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext});
             return;
         }
@@ -248,26 +321,7 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                                         placeholder="https://exemple.com/mon-super-article-seo"
                                         className="input input-bordered input-sm flex-1 text-sm min-w-0"
                                     />
-                                    <button className="btn btn-sm btn-neutral gap-1.5 shrink-0">
-                                        <Zap size={13} strokeWidth={2}/>
-                                        <span className="hidden xs:inline">Récupérer</span>
-                                    </button>
                                 </div>
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-medium text-base-content/70">
-                                    Ou importer un document
-                                </label>
-                                <DropZone
-                                    file={file}
-                                    isDragging={isDragging}
-                                    onDrop={handleDrop}
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onFileChange={handleFileChange}
-                                    fileInputRef={fileInputRef}
-                                />
                             </div>
                         </>
                     )}

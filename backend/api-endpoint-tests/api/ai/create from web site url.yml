@@ -1,0 +1,21 @@
+info:
+  name: create from web site url
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:5000/api/ai/generate-from-website
+  body:
+    type: json
+    data: |-
+      {
+          "title": "Billets pour le Grand Prix Auvergne-Rhône-Alpes 2026",
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

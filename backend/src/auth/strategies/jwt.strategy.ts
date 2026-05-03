@@ -43,6 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       role: user.role,
       firstname: user.firstname,
       lastname: user.lastname,
+      notion_token: user.cloudSpace?.notionToken,
     };
   }
 }

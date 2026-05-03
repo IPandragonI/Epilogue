@@ -1,5 +1,6 @@
 export enum PlatformEnum {
-  LINKEDIN = 'DRAFT',
+  LINKEDIN = 'LINKEDIN',
+  DRAFT = 'DRAFT',
   BLOG = 'BLOG',
   TWITTER = 'TWITTER',
   INSTAGRAM = 'INSTAGRAM',
