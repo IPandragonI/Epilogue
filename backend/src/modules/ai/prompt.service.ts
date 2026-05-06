@@ -13,7 +13,7 @@ export class PromptService {
 
         const filePath = path.join(
             process.cwd(),
-            'src/ai/prompts',
+            'src/modules/ai/prompts',
             `${name}.system.txt`,
         );
 

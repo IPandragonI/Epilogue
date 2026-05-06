@@ -2,8 +2,11 @@ import { AIProvider } from '../interfaces/ai-provider.interface';
 import { postJSON } from '../utils/http';
 import { MistralResponse } from '../interfaces/ai-responses.interface';
 import { InternalServerErrorException } from '@nestjs/common';
+import { PromptService } from '../prompt.service';
 
 export class MistralProvider implements AIProvider {
+  constructor(private readonly promptService: PromptService) {}
+
   async generateText(prompt: string): Promise<string> {
     const data: MistralResponse = await postJSON<MistralResponse>(
       'https://api.mistral.ai/v1/chat/completions',
@@ -19,7 +22,7 @@ export class MistralProvider implements AIProvider {
     return data.choices[0].message.content;
   }
 
-  async uploadFileToMistral(file: Express.Multer.File): Promise<string> {
+  async uploadFile(file: Express.Multer.File): Promise<string> {
     const formData = new FormData();
 
     const buffer = file.buffer;
@@ -48,7 +51,7 @@ export class MistralProvider implements AIProvider {
     return data.id;
   }
 
-  async getMistralSignedUrl(fileId: string): Promise<string> {
+  async getFileUrl(fileId: string): Promise<string> {
     const response = await fetch(
       `https://api.mistral.ai/v1/files/${fileId}/url`,
       {
@@ -69,10 +72,12 @@ export class MistralProvider implements AIProvider {
     return data.url;
   }
 
-  async analyzeWithMistral(
+  async analyzeDocument(
     signedUrl: string,
     originalName: string,
   ): Promise<{ title: string; summary: string }> {
+    const systemPrompt = this.promptService.getPrompt('analyse-document');
+
     const response = await fetch(`https://api.mistral.ai/v1/chat/completions`, {
       method: 'POST',
       headers: {
@@ -83,6 +88,10 @@ export class MistralProvider implements AIProvider {
         model: 'mistral-small-latest',
         messages: [
           {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
             role: 'user',
             content: [
               {
@@ -91,12 +100,7 @@ export class MistralProvider implements AIProvider {
               },
               {
                 type: 'text',
-                text: `Analyse ce document et réponds UNIQUEMENT en JSON valide (sans balises markdown) avec ce format exact :
-{
-  "title": "le titre du document",
-  "summary": "un résumé clair et concis du document en 3-5 phrases"
-}
-Le nom du fichier original est : "${originalName}"`,
+                text: `Le nom du fichier original est : "${originalName}"`,
               },
             ],
           },
@@ -124,8 +128,8 @@ Le nom du fichier original est : "${originalName}"`,
     }
   }
 
-  async removeFileFromMistral(fileId: string): Promise<void> {
-    //delete the file from mistral after analysis
+  async deleteFile(fileId: string): Promise<void> {
+    //delete the file from the provider after analysis
     await fetch(`https://api.mistral.ai/v1/files/${fileId}`, {
       method: 'DELETE',
       headers: {
@@ -134,26 +138,26 @@ Le nom du fichier original est : "${originalName}"`,
     });
   }
 
-  async generateTextFromWebSite(
+  async generateTextFromWebContent(
     content: string,
   ): Promise<{ title: string; summary: string }> {
+    const systemPrompt = this.promptService.getPrompt('analyse-scrapping');
+
     const response: MistralResponse = await postJSON<MistralResponse>(
       `https://api.mistral.ai/v1/chat/completions`,
       {
         model: 'mistral-small-latest',
         messages: [
           {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Voici le contenu d'une page web : ${content}, génère un résumé clair et concis en 3-5 phrases. RÉPONDS UNIQUEMENT AVEC LE RÉSUMÉ, SANS BALISES MARKDOWN, SANS AUTRE TEXTE.
-                Il faut que le résultat soit sous format JSON comme la structure suivante : 
-                {
-                "title": "le titre de la page web",
-                "summary": "le résumé de la page web en 3-5 phrases"
-                }
-                `,
+                text: content,
               },
             ],
           },

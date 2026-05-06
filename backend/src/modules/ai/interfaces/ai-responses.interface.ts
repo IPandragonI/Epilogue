@@ -4,4 +4,4 @@ export interface MistralResponse {
             content: string;
         };
     }[];
-};
+}

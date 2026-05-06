@@ -1,13 +1,13 @@
 export interface AIProvider {
-  generateText(prompt: string, options?: any): Promise<string>;
-  uploadFileToMistral(file: Express.Multer.File): Promise<string>;
-  getMistralSignedUrl(fileId: string): Promise<string>;
-  analyzeWithMistral(
-    signedUrl: string,
+  generateText(prompt: string): Promise<string>;
+  uploadFile(file: Express.Multer.File): Promise<string>;
+  getFileUrl(fileId: string): Promise<string>;
+  analyzeDocument(
+    fileUrl: string,
     fileName: string,
   ): Promise<{ title: string; summary: string }>;
-  removeFileFromMistral(fileId: string): Promise<void>;
-  generateTextFromWebSite(
+  deleteFile(fileId: string): Promise<void>;
+  generateTextFromWebContent(
     content: string,
   ): Promise<{ title: string; summary: string }>;
 }

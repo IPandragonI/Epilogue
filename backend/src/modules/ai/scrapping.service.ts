@@ -1,15 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { AI_PROVIDER } from '../ai.provider';
-import * as aiProviderInterface from '../interfaces/ai-provider.interface';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import axios, { AxiosRequestConfig } from 'axios';
 import * as cheerio from 'cheerio';
 
 @Injectable()
 export class ScrappingService {
-  constructor(
-    @Inject(AI_PROVIDER)
-    private readonly provider: aiProviderInterface.AIProvider,
-  ) {}
+  constructor() {}
 
   async scrapeUrl(url: string): Promise<{ content: string }> {
     const config: AxiosRequestConfig = {
@@ -31,12 +26,12 @@ export class ScrappingService {
 
       let bodyText = $('body').text() || '';
 
-      bodyText = bodyText.replace(/```[\s\S]*?```/g, ' ');
-      bodyText = bodyText.replace(/`[^`]*`/g, ' ');
+      bodyText = bodyText.replaceAll(/```[\s\S]*?```/g, ' ');
+      bodyText = bodyText.replaceAll(/`[^`]*`/g, ' ');
 
-      bodyText = bodyText.replace(/<!--[\s\S]*?-->/g, ' ');
+      bodyText = bodyText.replaceAll(/<!--[\s\S]*?-->/g, ' ');
 
-      bodyText = bodyText.replace(/\s+/g, ' ').trim();
+      bodyText = bodyText.replaceAll(/\s+/g, ' ').trim();
       console.log('bodyTest', bodyText);
       return { content: bodyText };
     } catch (error) {

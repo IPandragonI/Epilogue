@@ -4,8 +4,7 @@ import { AIService } from './ai.service';
 import { AIProviderFactory } from './ai.provider';
 import { AIController } from './ai.controller';
 import { PromptService } from './prompt.service';
-import { DocumentService } from './document/document.service';
-import { ScrappingService } from './document/scrapping.service';
+import { ScrappingService } from './scrapping.service';
 
 @Module({
   controllers: [AIController],
@@ -13,7 +12,6 @@ import { ScrappingService } from './document/scrapping.service';
     AIService,
     AIProviderFactory,
     PromptService,
-    DocumentService,
     ScrappingService,
   ],
   exports: [AIService],
