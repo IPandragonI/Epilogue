@@ -1,4 +1,9 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateAgencyDto } from './create-agency.dto';
+import { IsOptional, IsString } from 'class-validator';
 
-export class UpdateAgencyDto extends PartialType(CreateAgencyDto) {}
+export class UpdateAgencyDto extends PartialType(CreateAgencyDto) {
+  @IsOptional()
+  @IsString()
+  notionToken?: string;
+}

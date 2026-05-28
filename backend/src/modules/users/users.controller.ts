@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -6,8 +14,6 @@ import { UserRole } from './entities/userRole.enum';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guards';
 import { Roles } from 'src/auth/decorators/auth.decorators';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UpdateCloudSpaceDto } from '../cloud-space/dto/update-cloud-space.dto';
-import { CurationItemService } from '../curation-item/curation-item.service';
 
 @ApiBearerAuth()
 @Controller('users')
@@ -60,24 +66,6 @@ export class UsersController {
     return await this.usersService.update(id, updateUserDto);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id/notion')
-  @ApiOperation({
-    summary: 'Update one user',
-    description: 'Retrieve the user with his id.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'User updated successfully.',
-  })
-  @ApiResponse({ status: 403, description: 'Forbidden.' })
-  async updateCloudSpace(
-    @Param('id') id: string,
-    @Body() updateCloudSpace: UpdateCloudSpaceDto,
-  ) {
-    return await this.usersService.updateCloudSpace(id, updateCloudSpace);
-  }
-
   @Get(':id/curation-items')
   @ApiOperation({
     summary: 'Get Curations items for a user',
@@ -85,5 +73,19 @@ export class UsersController {
   })
   async getCurationItemsByUser(@Param('id') id: string) {
     return await this.usersService.getCurationItemsByUserId(id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Delete one user',
+    description: 'Delete the user with his id.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User deleted successfully.',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  async remove(@Param('id') id: string) {
+    return await this.usersService.remove(id);
   }
 }

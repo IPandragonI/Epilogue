@@ -134,17 +134,18 @@ export interface User {
     password: string | null;
     role: UserRole;
     createdAt: string;
-    cloudSpace?: CloudSpace;
+    agency: Agency
+}
+
+export interface Agency {
+    id: string;
+    name: string;
+    notion_token: string;
 }
 
 export enum UserRole {
     ADMIN = "admin",
     PUBLIC = "public",
-}
-
-export interface CloudSpace {
-    id: string;
-    notion_token: string
 }
 
 export interface CreateCurationItemDto {

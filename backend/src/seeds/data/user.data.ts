@@ -1,13 +1,14 @@
 import { UserRole } from '../../modules/users/entities/userRole.enum';
+import { Agency } from '../../modules/agency/entities/agency.entity';
 
-export const userData = (passwordHash: string) => [
+export const userData = (passwordHash: string, agency: Agency) => [
   {
     firstname: 'Admin',
     lastname: 'User',
     email: 'admin@example.com',
     password: passwordHash,
     role: UserRole.ADMIN,
-    cloudSpace: { notionToken: 'notion-token-admin' },
+    agency: agency,
   },
   {
     firstname: 'John',
@@ -15,6 +16,6 @@ export const userData = (passwordHash: string) => [
     email: 'user@example.com',
     password: passwordHash,
     role: UserRole.PUBLIC,
-    cloudSpace: { notionToken: 'notion-token-user' },
+    agency: agency,
   },
 ];

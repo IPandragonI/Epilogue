@@ -247,20 +247,18 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 Desktop : centered modal (rounded, 2/5 width, fixed height)
             */}
             <div className="
-                bg-accent
+                bg-base-300
                 flex flex-col
                 overflow-hidden
                 shadow-xl
 
-                w-full rounded-t-2xl max-h-[92dvh]
+                w-full rounded-t-2xl h-[420px]
                 sm:rounded-2xl sm:w-4/5 sm:max-h-[90vh]
                 md:w-3/5
                 lg:w-2/5
             ">
 
-                {/* ── Header ── */}
                 <div className="px-5 sm:px-6 pt-5 pb-3 shrink-0">
-                    {/* Mobile drag handle */}
                     <div className="sm:hidden w-10 h-1 rounded-full bg-base-content/20 mx-auto mb-4"/>
 
                     <div className="flex items-start justify-between">
@@ -303,10 +301,8 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                     </div>
                 </div>
 
-                {/* ── Body (scrollable on mobile if content overflows) ── */}
                 <div className="px-5 sm:px-6 py-4 flex flex-col gap-4 overflow-y-auto flex-1">
 
-                    {/* URL tab */}
                     {activeTab === "url" && (
                         <>
                             <div className="flex flex-col gap-1.5">
@@ -381,25 +377,6 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                             )}
                         </div>
                     )}
-
-                    {/* Use as immediate context checkbox */}
-                    <label
-                        className="flex items-start gap-3 bg-base-100 border border-base-300 rounded-lg px-4 py-3 cursor-pointer hover:bg-base-200 transition-colors">
-                        <input
-                            type="checkbox"
-                            checked={useAsContext}
-                            onChange={(e) => setUseAsContext(e.target.checked)}
-                            className="checkbox checkbox-sm mt-0.5 shrink-0"
-                        />
-                        <div>
-                            <p className="text-sm font-semibold text-base-content">
-                                Utiliser comme contexte immédiat
-                            </p>
-                            <p className="text-xs text-base-content/50 mt-0.5">
-                                L&apos;IA analysera cette ressource pour vos prochaines créations de contenu.
-                            </p>
-                        </div>
-                    </label>
                 </div>
 
                 {/* ── Footer ── */}

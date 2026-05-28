@@ -2,7 +2,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { UsersService } from '../../modules/users/users.service';
-import { FastifyRequest } from 'fastify';
 
 export interface JwtPayload {
   sub: string;
@@ -32,6 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: JwtPayload) {
     const user = await this.usersService.findOne(payload.sub);
+    console.log(user.agency);
 
     if (!user) {
       throw new UnauthorizedException();
@@ -43,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       role: user.role,
       firstname: user.firstname,
       lastname: user.lastname,
-      notion_token: user.cloudSpace?.notionToken,
+      agency: user.agency || null,
     };
   }
 }

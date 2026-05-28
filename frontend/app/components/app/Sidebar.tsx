@@ -62,7 +62,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const BOTTOM_ITEMS = [
     {label: "Support", href: "/support", icon: <HelpCircle size={18}/>},
-    {label: "Paramètres", href: "/parametres", icon: <Settings size={18}/>},
+    {label: "Paramètres", href: "/parameters", icon: <Settings size={18}/>},
 ];
 
 

@@ -12,7 +12,6 @@ import { ContentSeo } from '../modules/content-seo/entities/content-seo.entity';
 import { ContentIdea } from '../modules/content-idea/entities/content-idea.entity';
 import { CurationSource } from '../modules/curation-source/entities/curation-source.entity';
 import { CurationItem } from '../modules/curation-item/entities/curation-item.entity';
-import { CloudSpace } from '../modules/cloud-space/entities/cloud-space.entity';
 
 import { agencyData } from './data/agency.data';
 import { topicData } from './data/topic.data';
@@ -28,7 +27,16 @@ async function seed() {
 
   try {
     console.log('🗑️  Cleaning Database');
-    const entities = [CurationItem, CurationSource, ContentSeo, ContentIdea, Content, Topic, User, Agency, CloudSpace];
+    const entities = [
+      CurationItem,
+      CurationSource,
+      ContentSeo,
+      ContentIdea,
+      Content,
+      Topic,
+      User,
+      Agency,
+    ];
     for (const entity of entities) {
       const repository = dataSource.getRepository(entity);
       await repository.createQueryBuilder().delete().from(entity).execute();
@@ -36,12 +44,15 @@ async function seed() {
     console.log('✨ Database cleaned');
 
     const agencyRepo = dataSource.getRepository(Agency);
-    const agencies = await agencyRepo.save(agencyRepo.create(agencyData()),);
+    const agencies = await agencyRepo.save(agencyRepo.create(agencyData()));
     console.log('✅ Agencies seeded');
 
     const userRepo = dataSource.getRepository(User);
     const pw = await bcrypt.hash('password', 10);
-    const users = await userRepo.save(userRepo.create(userData(pw)));
+    const userAgency = agencies[0];
+    const users = await userRepo.save(
+      userRepo.create(userData(pw, userAgency)),
+    );
     console.log('✅ Users seeded');
 
     const topicRepo = dataSource.getRepository(Topic);
@@ -50,11 +61,17 @@ async function seed() {
 
     const contentRepo = dataSource.getRepository(Content);
     const contentPayloads = contentData();
+    // add user on content
+    contentPayloads.forEach((content) => {
+      content.userId = users[0].id;
+    });
     await contentRepo.save(contentRepo.create(contentPayloads));
     console.log('✅ Contents & SEO seeded');
 
     const curationSourceRepo = dataSource.getRepository(CurationSource);
-    const source = await curationSourceRepo.save(curationSourceRepo.create(curationData()));
+    const source = await curationSourceRepo.save(
+      curationSourceRepo.create(curationData()),
+    );
 
     const curationItemRepo = dataSource.getRepository(CurationItem);
     await curationItemRepo.save({

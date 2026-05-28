@@ -11,8 +11,10 @@ export const contentData = () => [
     seo: {
       score: 95,
       keywords: 'SEO 2026, IA, optimisation sémantique, Google Search',
-      review: 'Excellent usage des mots-clés de longue traine et structure de balisage parfaite.',
+      review:
+        'Excellent usage des mots-clés de longue traine et structure de balisage parfaite.',
     },
+    userId: '',
   },
   {
     title: 'Les secrets d’un post LinkedIn viral',
@@ -23,8 +25,10 @@ export const contentData = () => [
     seo: {
       score: 45,
       keywords: 'LinkedIn, personal branding, algorithme, visibilité',
-      review: 'Le score est bas car le contenu mise sur le social. Manque de densité de mots-clés techniques.',
+      review:
+        'Le score est bas car le contenu mise sur le social. Manque de densité de mots-clés techniques.',
     },
+    userId: '',
   },
   {
     title: 'Guide complet sur NestJS et TypeORM',
@@ -35,8 +39,10 @@ export const contentData = () => [
     seo: {
       score: 78,
       keywords: 'NestJS, TypeORM, TypeScript, Backend, Seeding',
-      review: 'Bonne base technique. Devrait inclure plus de liens internes pour dépasser les 85 points.',
+      review:
+        'Bonne base technique. Devrait inclure plus de liens internes pour dépasser les 85 points.',
     },
+    userId: '',
   },
   {
     title: 'L’impact de la vidéo courte sur le SEO local',
@@ -47,8 +53,10 @@ export const contentData = () => [
     seo: {
       score: 62,
       keywords: 'SEO local, Reels, TikTok marketing, visibilité Google',
-      review: 'Optimisation correcte pour les réseaux sociaux mais nécessite des sous-titres textuels pour Google.',
+      review:
+        'Optimisation correcte pour les réseaux sociaux mais nécessite des sous-titres textuels pour Google.',
     },
+    userId: '',
   },
   {
     title: 'Pourquoi l’IA ne remplacera pas les rédacteurs SEO',
@@ -59,8 +67,10 @@ export const contentData = () => [
     seo: {
       score: 88,
       keywords: 'E-E-A-T, rédaction web, IA vs Humain, stratégie de contenu',
-      review: 'Très bon score. L’article est bien structuré avec des balises H1-H3 optimisées.',
+      review:
+        'Très bon score. L’article est bien structuré avec des balises H1-H3 optimisées.',
     },
+    userId: '',
   },
   {
     title: 'Le futur du Search : De Google à ChatGPT',
@@ -71,8 +81,10 @@ export const contentData = () => [
     seo: {
       score: 30,
       keywords: 'Search Generative Experience, SGE, ChatGPT, futur du web',
-      review: 'Format trop court pour un référencement classique, mais fort potentiel de trafic referral.',
+      review:
+        'Format trop court pour un référencement classique, mais fort potentiel de trafic referral.',
     },
+    userId: '',
   },
   {
     title: 'Optimiser la vitesse de chargement (Core Web Vitals)',
@@ -83,7 +95,9 @@ export const contentData = () => [
     seo: {
       score: 15,
       keywords: 'Core Web Vitals, LCP, Performance Web',
-      review: 'Contenu trop maigre pour l’instant. Crawl impossible par les moteurs.',
+      review:
+        'Contenu trop maigre pour l’instant. Crawl impossible par les moteurs.',
     },
+    userId: '',
   },
 ];

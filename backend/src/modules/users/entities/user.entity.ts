@@ -1,12 +1,14 @@
 import {
   Column,
   Entity,
-  OneToOne,
   PrimaryGeneratedColumn,
   JoinColumn,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { UserRole } from './userRole.enum';
-import { CloudSpace } from '../../cloud-space/entities/cloud-space.entity';
+import { Agency } from '../../agency/entities/agency.entity';
+import { Content } from '../../content/entities/content.entity';
 
 @Entity('users')
 export class User {
@@ -31,7 +33,16 @@ export class User {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @OneToOne(() => CloudSpace, { cascade: true })
-  @JoinColumn()
-  cloudSpace: CloudSpace | null;
+  @Column({ type: 'uuid', nullable: true })
+  agencyId: string | null;
+
+  @ManyToOne(() => Agency, (agency) => agency.users, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'agencyId' })
+  agency: Agency | null;
+
+  @OneToMany(() => Content, (content: any) => content.user)
+  contents: Content[];
 }
