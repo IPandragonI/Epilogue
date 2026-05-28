@@ -47,22 +47,6 @@ function ResourceDetail({ resource }: { resource: CurationItems }) {
                 </p>
                 <p className="text-sm text-base-content/80">{resource.summary}</p>
             </div>
-
-            <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">
-                    Nuage de mots clés
-                </p>
-                <div className="flex flex-wrap gap-2">
-                    {["SEO", "Référencement", "Google", "Backlinks", "Contenu"].map((keyword) => (
-                        <span
-                            key={keyword}
-                            className="text-xs bg-base-200 text-base-content/80 px-2 py-1 rounded"
-                        >
-                            {keyword}
-                        </span>
-                    ))}
-                </div>
-            </div>
             <div>
                 <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">
                     Date de création
@@ -70,6 +54,51 @@ function ResourceDetail({ resource }: { resource: CurationItems }) {
                 <p className="text-sm text-base-content/80">
                     {new Date(resource.lastFetchedAt).toLocaleString()}
                 </p>
+            </div>
+            <div>
+                <button className="btn btn-error btn-sm" onClick={() => {
+                    Swal.fire({
+                        title: "Êtes-vous sûr ?",
+                        text: "Cette action est irréversible.",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonColor: "#d33",
+                        cancelButtonColor: "#3085d6",
+                        confirmButtonText: "Oui, supprimer !",
+                        cancelButtonText: "Annuler"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation-item/${resource.id}`, {
+                                method: "DELETE",
+                                credentials: "include"
+                            }).then((res) => {
+                                if (res.ok) {
+                                    Swal.fire({
+                                        title: "Supprimé !",
+                                        text: "La ressource a été supprimée.",
+                                        icon: "success"
+                                    }).then(() => {
+                                        window.location.reload();
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: "Erreur",
+                                        text: "La ressource n'a pas pu être supprimée.",
+                                        icon: "error"
+                                    });
+                                }
+                            }).catch(() => {
+                                Swal.fire({
+                                    title: "Erreur",
+                                    text: "La ressource n'a pas pu être supprimée.",
+                                    icon: "error"
+                                });
+                            });
+                        }
+                    });
+                }}>
+                    Supprimer la ressource
+                </button>
             </div>
         </div>
     );
