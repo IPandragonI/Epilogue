@@ -2,6 +2,7 @@
 
 import { Menu, Search, Bell } from "lucide-react";
 import { ChevronDown } from "lucide-react";
+import Link from "next/link";
 
 interface NavbarProps {
     onToggleSidebar: () => void;
@@ -52,9 +53,9 @@ export default function Navbar({ onToggleSidebar, user }: NavbarProps) {
                     tabIndex={0}
                     className="dropdown-content menu menu-sm shadow-lg bg-base-100 rounded-box w-48 z-50 border border-base-200 mt-1"
                 >
-                    <li><a>Mon profil</a></li>
-                    <li><a>Paramètres</a></li>
-                    <li className="divider my-0" />
+                    <li>
+                        <Link href="/parametres">Paramètres</Link>
+                    </li>
                     <li>
                         <button
                             onClick={async () => {
