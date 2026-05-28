@@ -8,6 +8,9 @@ export const userData = (passwordHash: string) => [
     password: passwordHash,
     role: UserRole.ADMIN,
     cloudSpace: { notionToken: 'notion-token-admin' },
+    nbTokenUsedThisMonth: 0,
+    nbCurationUsedThisMonth: 0,
+    nbIdeaGenerationUsedThisMonth: 0,
   },
   {
     firstname: 'John',
@@ -16,5 +19,8 @@ export const userData = (passwordHash: string) => [
     password: passwordHash,
     role: UserRole.PUBLIC,
     cloudSpace: { notionToken: 'notion-token-user' },
+    nbTokenUsedThisMonth: 0,
+    nbCurationUsedThisMonth: 0,
+    nbIdeaGenerationUsedThisMonth: 0,
   },
 ];

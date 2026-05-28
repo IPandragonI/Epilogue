@@ -7,7 +7,7 @@ import {useAuth} from "@/app/hooks/useAuth";
 
 export default function AppLayout({children}: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
 
     return (
         <div className="flex h-screen overflow-hidden">

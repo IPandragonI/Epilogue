@@ -11,7 +11,7 @@ import {
     RefreshCw,
     HelpCircle,
     Settings,
-    ChevronDown,
+    ChevronDown, Tag,
 } from "lucide-react";
 
 type NavChild = { label: string; href: string };
@@ -61,8 +61,9 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const BOTTOM_ITEMS = [
+    {label: "Tarifs", href: "/pricing", icon: <Tag size={18}/>},
     {label: "Support", href: "/support", icon: <HelpCircle size={18}/>},
-    {label: "Paramètres", href: "/parametres", icon: <Settings size={18}/>},
+    {label: "Paramètres", href: "/settings", icon: <Settings size={18}/>},
 ];
 
 

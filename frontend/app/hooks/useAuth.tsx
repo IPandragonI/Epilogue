@@ -1,9 +1,10 @@
 'use client';
 
 import {useEffect, useState} from "react";
+import {User} from "@/app/types/types";
 
 export function useAuth() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User|null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function useAuth() {
       }
     };
 
-    fetchUser();
+    void fetchUser();
   }, []);
 
   return { user, loading };

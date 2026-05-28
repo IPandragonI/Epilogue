@@ -17,6 +17,8 @@ import { CurationSourceModule } from './modules/curation-source/curation-source.
 import { ContentNotionModule } from './modules/content-notion/content-notion.module';
 import { ContentSeoModule } from './modules/content-seo/content-seo.module';
 import { CloudSpaceModule } from './modules/cloud-space/cloud-space.module';
+import { SubscriptionPlanModule } from './modules/subscription-plan/subscription-plan.module';
+import { AgencySubscriptionModule } from './modules/agency-subscription/agency-subscription.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { CloudSpaceModule } from './modules/cloud-space/cloud-space.module';
     ContentNotionModule,
     ContentSeoModule,
     CloudSpaceModule,
+    SubscriptionPlanModule,
+    AgencySubscriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

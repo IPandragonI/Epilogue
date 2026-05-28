@@ -54,7 +54,7 @@ export default function Navbar({ onToggleSidebar, user }: NavbarProps) {
                     className="dropdown-content menu menu-sm shadow-lg bg-base-100 rounded-box w-48 z-50 border border-base-200 mt-1"
                 >
                     <li>
-                        <Link href="/parametres">Paramètres</Link>
+                        <Link href="/settings">Paramètres</Link>
                     </li>
                     <li>
                         <button

@@ -132,6 +132,7 @@ export interface User {
     firstname: string;
     email: string;
     password: string | null;
+    agencyId?: string;
     role: UserRole;
     createdAt: string;
     cloudSpace?: CloudSpace;
@@ -156,4 +157,16 @@ export interface CreateCurationItemDto {
         sourceUrl: string;
         sourceType: string;
     };
+}
+
+export interface SubscriptionPlan {
+    id: number;
+    name: string;
+    internalName: string;
+    description: string;
+    price: number;
+    billingCycle:string;
+    maxTokenPerMonth: number;
+    maxCurationPerMonth: number;
+    maxIdeaGenerationPerMonth: number;
 }
