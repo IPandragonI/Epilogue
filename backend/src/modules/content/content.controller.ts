@@ -44,6 +44,11 @@ export class ContentController {
     return this.contentService.findAllWithSeoPaginated(+page, +limit);
   }
 
+  @Get('stats')
+  getStats() {
+    return this.contentService.getStats();
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateContentDto: UpdateContentDto) {
     return this.contentService.update(id, updateContentDto);
