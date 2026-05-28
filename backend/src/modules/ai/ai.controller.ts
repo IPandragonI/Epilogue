@@ -4,10 +4,13 @@ import {
   Controller,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { AIService } from './ai.service';
 import { GenerateTextDto } from './dto/generate-text.dto';
+import { GeneratePostDto } from './dto/generate-post-dto';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiOperation,
@@ -15,6 +18,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -145,5 +149,20 @@ export class AIController {
     };
 
     return this.aiService.analyzeDocument(file);
+  }
+
+  @Post('generate-post')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Génère un post IA pour un réseau social',
+  })
+  async generatePost(@Body() dto: GeneratePostDto) {
+    return await this.aiService.generatePost(
+      dto.platform,
+      dto.subject,
+      dto.tone,
+      dto.length,
+    );
   }
 }

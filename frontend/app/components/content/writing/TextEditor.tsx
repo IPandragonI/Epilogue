@@ -1,6 +1,7 @@
 "use client";
 
-import {useEditor, EditorContent} from "@tiptap/react";
+import {useEffect} from "react";
+import {useEditor, EditorContent, useEditorState} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import LinkExtension from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -72,13 +73,58 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                class: "focus:outline-none min-h-[280px] prose prose-sm max-w-none text-base-content",
+                class: [
+                    "focus:outline-none min-h-[280px] prose prose-sm max-w-none text-base-content",
+                    "[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:leading-tight",
+                    "[&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-2 [&_h2]:mt-3 [&_h2]:leading-tight",
+                    "[&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-1.5 [&_h3]:mt-3 [&_h3]:leading-snug",
+                    "[&_strong]:font-bold [&_em]:italic",
+                    "[&_p]:mb-2 [&_p]:leading-relaxed",
+                    "[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2",
+                    "[&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2",
+                    "[&_li]:mb-0.5 [&_li]:leading-relaxed",
+                    "[&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-base-content/60 [&_blockquote]:my-2",
+                    "[&_code]:bg-base-200 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono",
+                    "[&_a]:underline [&_a]:text-primary",
+                ].join(" "),
             },
         },
         onUpdate: ({editor}) => {
             onChange(editor.getHTML());
         },
     });
+
+    const editorState = useEditorState({
+        editor,
+        selector: (ctx) => {
+            if (!ctx.editor) return null;
+            return {
+                isH1: ctx.editor.isActive("heading", {level: 1}),
+                isH2: ctx.editor.isActive("heading", {level: 2}),
+                isH3: ctx.editor.isActive("heading", {level: 3}),
+                isBold: ctx.editor.isActive("bold"),
+                isItalic: ctx.editor.isActive("italic"),
+                isUnderline: ctx.editor.isActive("underline"),
+                isStrike: ctx.editor.isActive("strike"),
+                isHighlight: ctx.editor.isActive("highlight"),
+                isCode: ctx.editor.isActive("code"),
+                isAlignLeft: ctx.editor.isActive({textAlign: "left"}),
+                isAlignCenter: ctx.editor.isActive({textAlign: "center"}),
+                isAlignRight: ctx.editor.isActive({textAlign: "right"}),
+                isBulletList: ctx.editor.isActive("bulletList"),
+                isOrderedList: ctx.editor.isActive("orderedList"),
+                isBlockquote: ctx.editor.isActive("blockquote"),
+                isLink: ctx.editor.isActive("link"),
+            };
+        },
+    });
+
+    useEffect(() => {
+        if (!editor) return;
+        if (editor.getHTML() !== content) {
+            editor.commands.setContent(content || "", false);
+        }
+    }, [content]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!editor) return null;
 
@@ -97,7 +143,6 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
     return (
         <div className="flex flex-col flex-1 overflow-hidden rounded-xl border border-base-300 bg-base-100">
             <div className="flex items-center gap-0.5 px-3 py-2 border-b border-base-300 flex-wrap bg-base-100">
-
                 <ToolBtn title="Annuler" onClick={() => editor.chain().focus().undo().run()}>
                     <Undo size={14}/>
                 </ToolBtn>
@@ -109,21 +154,21 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
 
                 <ToolBtn
                     title="Titre H1"
-                    active={editor.isActive("heading", {level: 1})}
+                    active={editorState?.isH1 ?? false}
                     onClick={() => editor.chain().focus().toggleHeading({level: 1}).run()}
                 >
                     <span className="text-[11px] font-bold leading-none">H1</span>
                 </ToolBtn>
                 <ToolBtn
                     title="Titre H2"
-                    active={editor.isActive("heading", {level: 2})}
+                    active={editorState?.isH2 ?? false}
                     onClick={() => editor.chain().focus().toggleHeading({level: 2}).run()}
                 >
                     <Heading2 size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Titre H3"
-                    active={editor.isActive("heading", {level: 3})}
+                    active={editorState?.isH3 ?? false}
                     onClick={() => editor.chain().focus().toggleHeading({level: 3}).run()}
                 >
                     <Heading3 size={14}/>
@@ -133,42 +178,42 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
 
                 <ToolBtn
                     title="Gras"
-                    active={editor.isActive("bold")}
+                    active={editorState?.isBold ?? false}
                     onClick={() => editor.chain().focus().toggleBold().run()}
                 >
                     <Bold size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Italique"
-                    active={editor.isActive("italic")}
+                    active={editorState?.isItalic ?? false}
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                 >
                     <Italic size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Souligné"
-                    active={editor.isActive("underline")}
+                    active={editorState?.isUnderline ?? false}
                     onClick={() => editor.chain().focus().toggleUnderline().run()}
                 >
                     <UnderlineIcon size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Barré"
-                    active={editor.isActive("strike")}
+                    active={editorState?.isStrike ?? false}
                     onClick={() => editor.chain().focus().toggleStrike().run()}
                 >
                     <Strikethrough size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Surligner"
-                    active={editor.isActive("highlight")}
+                    active={editorState?.isHighlight ?? false}
                     onClick={() => editor.chain().focus().toggleHighlight().run()}
                 >
                     <Highlighter size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Code inline"
-                    active={editor.isActive("code")}
+                    active={editorState?.isCode ?? false}
                     onClick={() => editor.chain().focus().toggleCode().run()}
                 >
                     <Code size={14}/>
@@ -178,21 +223,21 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
 
                 <ToolBtn
                     title="Aligner à gauche"
-                    active={editor.isActive({textAlign: "left"})}
+                    active={editorState?.isAlignLeft ?? false}
                     onClick={() => editor.chain().focus().setTextAlign("left").run()}
                 >
                     <AlignLeft size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Centrer"
-                    active={editor.isActive({textAlign: "center"})}
+                    active={editorState?.isAlignCenter ?? false}
                     onClick={() => editor.chain().focus().setTextAlign("center").run()}
                 >
                     <AlignCenter size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Aligner à droite"
-                    active={editor.isActive({textAlign: "right"})}
+                    active={editorState?.isAlignRight ?? false}
                     onClick={() => editor.chain().focus().setTextAlign("right").run()}
                 >
                     <AlignRight size={14}/>
@@ -202,21 +247,21 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
 
                 <ToolBtn
                     title="Liste à puces"
-                    active={editor.isActive("bulletList")}
+                    active={editorState?.isBulletList ?? false}
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
                 >
                     <List size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Liste numérotée"
-                    active={editor.isActive("orderedList")}
+                    active={editorState?.isOrderedList ?? false}
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 >
                     <ListOrdered size={14}/>
                 </ToolBtn>
                 <ToolBtn
                     title="Citation"
-                    active={editor.isActive("blockquote")}
+                    active={editorState?.isBlockquote ?? false}
                     onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 >
                     <Quote size={14}/>
@@ -226,7 +271,7 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
 
                 <ToolBtn
                     title="Lien"
-                    active={editor.isActive("link")}
+                    active={editorState?.isLink ?? false}
                     onClick={handleSetLink}
                 >
                     <Link2 size={14}/>

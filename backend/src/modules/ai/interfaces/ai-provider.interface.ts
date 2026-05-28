@@ -10,4 +10,16 @@ export interface AIProvider {
   generateTextFromWebContent(
     content: string,
   ): Promise<{ title: string; summary: string }>;
+
+  generatePost(
+    platform: string,
+    subject: string,
+    tone: string,
+    length: string,
+  ): Promise<{
+    title: string;
+    content: string;
+    tags: string[];
+    references: string[];
+  }>;
 }

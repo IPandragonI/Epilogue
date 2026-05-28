@@ -1,14 +1,11 @@
 "use client";
 
 import {useState} from "react";
-import {
-    CheckCircle2,
-    Sparkles,
-    ArrowRight,
-} from "lucide-react";
+import {CheckCircle2, Sparkles, ArrowRight} from "lucide-react";
 import {Platform, PlatformConfig, PlatformType} from "@/app/types/types";
 import Preview from "@/app/components/content/writing/Preview";
 import TextEditor from "@/app/components/content/writing/TextEditor";
+import Swal from "sweetalert2";
 
 export default function WritingPage() {
     const [platform, setPlatform] = useState<PlatformType>(Platform.LINKEDIN);
@@ -17,20 +14,54 @@ export default function WritingPage() {
     const [tone, setTone] = useState("professionnel");
     const [length, setLength] = useState("moyen");
     const [generating, setGenerating] = useState(false);
+    const [genCount, setGenCount] = useState(0);
     const currentPlatform = PlatformConfig[platform];
+
+    const Toast = Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+    });
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
-        setGenerating(true);
-        await new Promise((r) => setTimeout(r, 1600));
-        const mockContent: Record<PlatformType, string> = {
-            Twitter: `🚀 Le SEO en 2026, ça ressemble à quoi ?\n\nSpoiler : les vieilles recettes ne marchent plus.\n\nVoici ce qui fonctionne vraiment maintenant :\n\n→ Contenu expert et dense\n→ Expérience utilisateur au cœur\n→ Être cité par les IA génératives\n\nLe trafic organique classique baisse. Mais pour ceux qui s'adaptent, l'opportunité est immense.\n\n#SEO #MarketingDigital #IA [Thread]`,
-            LinkedIn: `Le SEO en 2026 : ce qui a vraiment changé.\n\nJ'entends encore beaucoup de professionnels parler de SEO comme en 2019. Bourrage de mots-clés, backlinks en masse, articles génériques…\n\nLa réalité de 2026 est radicalement différente.\n\nGoogle SGE répond directement aux questions. Le clic organique classique est en chute libre. La seule façon d'exister : être la source que l'IA cite.\n\nComment ?\n• Créer du contenu expert et vérifiable\n• Structurer clairement (H1 > H2 > réponses directes)\n• Construire une vraie autorité thématique\n\nLe SEO n'est pas mort. Il s'est transformé.\n\n#SEO #Référencement #ContentMarketing`,
-            Instagram: `✨ SEO 2026 : les règles ont changé\n\nCe qui fonctionnait avant ne marche plus.\nMais les opportunités sont énormes pour ceux qui s'adaptent.\n\n📌 Sauvegarde ce post !\n\n#SEO #Marketing #ContentCreator #Référencement`,
-            Blog: `✨ SEO 2026 : les règles ont changé\n\nCe qui fonctionnait avant ne marche plus.\nMais les opportunités sont énormes pour ceux qui s'adaptent.\n\n📌 Sauvegarde ce post !\n\n#SEO #Marketing #ContentCreator #Référencement`,
-        };
-        setContent(mockContent[platform]);
-        setGenerating(false);
+        try {
+            setGenerating(true);
+            setContent("");
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/generate-post`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                credentials: "include",
+                body: JSON.stringify({platform, subject: prompt, tone, length}),
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText || "Erreur lors de la génération");
+            }
+
+            const data: {title: string; content: string; tags: string[]} = await res.json();
+
+            const html = [
+                `<h1>${data.title}</h1>`,
+                data.content.replace(/\n/g, ""),
+                platform !== Platform.TWITTER
+                    ? `<p>${data.tags.map(t => `#${t.replace(/\s+/g, "")}`).join(" ")}</p>`
+                    : null,
+            ].filter(Boolean).join("");
+
+            setContent(html);
+            setGenCount(c => c + 1);
+
+            await Toast.fire({icon: "success", title: "Post généré avec succès"});
+        } catch (error: any) {
+            await Toast.fire({icon: "error", title: error?.message || "Erreur lors de la génération"});
+        } finally {
+            setGenerating(false);
+        }
     };
 
     return (
@@ -55,19 +86,19 @@ export default function WritingPage() {
                                         : "border-base-300 bg-base-100 hover:border-accent/30"
                                 }`}
                             >
-                                <div className={`flex items-center justify-between gap-3`}>
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                                    platform === platformKey ? "bg-accent text-base-100" : "bg-base-200 text-accent/50"
-                                }`}>
-                                    {config.icon}
-                                </div>
-                                <div>
-                                    <p className={`text-sm font-semibold leading-tight ${platform === platformKey ? "" : "text-accent/60"}`}>
-                                        {config.label}
-                                    </p>
-                                    <p className="text-xs text-accent/40">{config.subLabel}</p>
-                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                                        platform === platformKey ? "bg-accent text-base-100" : "bg-base-200 text-accent/50"
+                                    }`}>
+                                        {config.icon}
                                     </div>
+                                    <div>
+                                        <p className={`text-sm font-semibold leading-tight ${platform === platformKey ? "" : "text-accent/60"}`}>
+                                            {config.label}
+                                        </p>
+                                        <p className="text-xs text-accent/40">{config.subLabel}</p>
+                                    </div>
+                                </div>
                                 {platform === platformKey && (
                                     <CheckCircle2 size={16} className="ml-1 text-accent shrink-0"/>
                                 )}
@@ -75,15 +106,22 @@ export default function WritingPage() {
                         ))}
                 </div>
 
-                <div className="card bg-base-100 border border-base-300 shadow-xs flex-1 flex flex-col min-h-72">
+                <div className="card bg-base-100 border border-base-300 shadow-xs flex-1 flex flex-col min-h-72 relative">
                     <TextEditor
                         content={content}
                         onChange={setContent}
                         maxChars={currentPlatform.maxLength}
                         placeholder="Commencez à taper..."
                     />
+                    {generating && (
+                        <div className="absolute inset-0 bg-base-100/70 backdrop-blur-sm flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <span className="loading loading-spinner loading-md text-accent"/>
+                                <p className="text-sm text-base-content/60">Génération du post...</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
-
             </div>
 
             <div className="w-96 shrink-0 flex flex-col gap-4 overflow-y-auto">
@@ -137,11 +175,7 @@ export default function WritingPage() {
                             disabled={generating || !prompt.trim()}
                             className="btn btn-outline btn-sm w-full gap-2 rounded-lg"
                         >
-                            {generating ? (
-                                <span className="loading loading-spinner loading-xs"/>
-                            ) : (
-                                <Sparkles size={13}/>
-                            )}
+                            {generating ? <span className="loading loading-spinner loading-xs"/> : <Sparkles size={13}/>}
                             {generating ? "Génération..." : "Générer"}
                         </button>
                     </div>
@@ -150,7 +184,7 @@ export default function WritingPage() {
                 <div className="card bg-base-100 border border-base-300 shadow-xs">
                     <div className="card-body p-5 gap-3">
                         <h2 className="font-bold text-sm">Aperçu direct</h2>
-                        <Preview platform={platform} content={content}/>
+                        <Preview key={genCount} platform={platform} content={content}/>
                     </div>
                 </div>
 
@@ -158,7 +192,6 @@ export default function WritingPage() {
                     Ajouter votre post
                     <ArrowRight size={15}/>
                 </button>
-
             </div>
         </div>
     );

@@ -177,4 +177,141 @@ export class MistralProvider implements AIProvider {
 
     return JSON.parse(cleaned);
   }
+
+  async generatePost(
+    platform: string,
+    subject: string,
+    tone: string,
+    length: string,
+  ): Promise<{ title: string; content: string; tags: string[]; references: string[] }> {
+      const systemPrompt = this.promptService.getPrompt('generate-post');
+      const lengthConfig = getLengthConfig(platform, length);
+      const hardCap      = Math.min(lengthConfig.max, ABSOLUTE_MAX);
+
+      const response: MistralResponse = await postJSON<MistralResponse>(
+      `https://api.mistral.ai/v1/chat/completions`,
+      {
+        model: 'mistral-small-latest',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Platform: ${platform}\nSubject: ${subject}\nTone: ${tone}\nLength: ${lengthConfig.instruction}`,
+              },
+            ],
+          },
+        ],
+      },
+      { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` },
+    );
+
+    const parsed  = JSON.parse(response.choices[0].message.content as string);
+    const content = truncateHtml(parsed.content ?? '', hardCap);
+
+    return {
+      title:      parsed.title ?? '',
+      content,
+      tags:       Array.isArray(parsed.tags)       ? parsed.tags       : [],
+      references: Array.isArray(parsed.references) ? parsed.references : [],
+    };
+  }
+}
+
+interface LengthConfig {
+  instruction: string;
+  max: number;
+}
+
+type PlatformLengthMap = Record<string, Record<string, LengthConfig>>;
+
+const PLATFORM_LENGTH_MAP: PlatformLengthMap = {
+  linkedin: {
+    court: {
+      instruction: 'court : 300 à 400 caractères HTML maximum',
+      max: 500,
+    },
+    moyen: {
+      instruction: 'moyen : 600 à 750 caractères HTML maximum',
+      max: 900,
+    },
+    long: {
+      instruction: 'long : 1000 à 1200 caractères HTML maximum',
+      max: 1400,
+    },
+  },
+  twitter: {
+    court: {
+      instruction: 'très court : 100 à 140 caractères HTML maximum',
+      max: 180,
+    },
+    moyen: {
+      instruction: 'court : 150 à 180 caractères HTML maximum',
+      max: 220,
+    },
+    long: {
+      instruction: 'court : 200 à 240 caractères HTML maximum',
+      max: 260,
+    },
+  },
+  instagram: {
+    court: {
+      instruction: 'court : 200 à 300 caractères HTML maximum',
+      max: 400,
+    },
+    moyen: {
+      instruction: 'moyen : 400 à 550 caractères HTML maximum',
+      max: 700,
+    },
+    long: {
+      instruction: 'long : 700 à 900 caractères HTML maximum',
+      max: 1100,
+    },
+  },
+  blog: {
+    court: {
+      instruction: 'court : 500 à 650 caractères HTML maximum',
+      max: 800,
+    },
+    moyen: {
+      instruction: 'moyen : 900 à 1100 caractères HTML maximum',
+      max: 1400,
+    },
+    long: {
+      instruction: 'long : 1500 à 1800 caractères HTML maximum',
+      max: 2100,
+    },
+  },
+};
+
+const ABSOLUTE_MAX = 2900;
+const DEFAULT_PLATFORM = 'linkedin';
+const DEFAULT_LENGTH = 'moyen';
+
+function getLengthConfig(platform: string, length: string): LengthConfig {
+  const platformMap =
+    PLATFORM_LENGTH_MAP[platform.toLowerCase()] ??
+    PLATFORM_LENGTH_MAP[DEFAULT_PLATFORM];
+  return platformMap[length] ?? platformMap[DEFAULT_LENGTH];
+}
+
+function truncateHtml(html: string, maxChars: number): string {
+  if (html.length <= maxChars) return html;
+
+  let truncated = html.slice(0, maxChars);
+
+  const lastOpen = truncated.lastIndexOf('<');
+  const lastClose = truncated.lastIndexOf('>');
+  if (lastOpen > lastClose) {
+    truncated = truncated.slice(0, lastOpen);
+  }
+
+  if (!truncated.trimEnd().endsWith('>')) {
+    truncated += '</p>';
+  }
+
+  return truncated.trimEnd();
 }

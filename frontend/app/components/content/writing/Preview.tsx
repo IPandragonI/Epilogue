@@ -1,39 +1,75 @@
 "use client";
 
+import {useState} from "react";
 import {Platform, PlatformType} from "@/app/types/types";
 
-function stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+function toReadableText(html: string): string {
+    return html
+        .replace(/<\/?(h[1-6]|p|li|blockquote|ul|ol)[^>]*>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&nbsp;/g, " ")
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n[ \t]+/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
 }
+
+const PROSE_CLASSES = [
+    "prose prose-xs max-w-none text-base-content/80",
+    "[&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-3 [&_h1]:leading-tight",   // ← ajouter
+    "[&_h2]:text-base [&_h2]:font-bold [&_h2]:mb-1.5 [&_h2]:mt-2 [&_h2]:leading-tight",
+    "[&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1 [&_h3]:mt-2 [&_h3]:leading-snug",
+    "[&_strong]:font-bold [&_em]:italic",
+    "[&_p]:mb-1.5 [&_p]:leading-relaxed",
+    "[&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mb-1.5",
+    "[&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:mb-1.5",
+    "[&_li]:mb-0.5 [&_li]:leading-relaxed",
+    "[&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-base-content/60 [&_blockquote]:my-1.5",
+    "[&_code]:bg-base-200 [&_code]:px-1 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono",
+    "[&_a]:underline [&_a]:text-primary",
+    "[&>*:last-child]:mb-0",
+].join(" ");
 
 function PreviewLabel({label}: {label: string}) {
     return <p className="text-[10px] font-bold uppercase tracking-widest text-base-content/30 mb-3">{label}</p>;
 }
 
 function TwitterPreview({content}: {content: string}) {
-    const plain = stripHtml(content).trim();
+    const plain     = toReadableText(content ?? "");
     const truncated = plain.slice(0, 280);
     const remaining = 280 - plain.length;
-    const remainColor = remaining < 0 ? "text-error" : remaining < 20 ? "text-warning" : "text-base-content/30";
+    const remainColor =
+        remaining < 0   ? "text-error" :
+            remaining < 20  ? "text-warning" :
+                "text-base-content/30";
 
     return (
         <div className="rounded-xl border border-base-300 bg-base-100 p-4 text-sm">
             <PreviewLabel label="Twitter / X Preview"/>
             <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-base-300 shrink-0 flex items-center justify-center text-base-content/40 text-xs font-bold">J</div>
+                <div className="w-9 h-9 rounded-full bg-base-300 shrink-0 flex items-center justify-center text-base-content/40 text-xs font-bold">
+                    J
+                </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1 flex-wrap">
                         <span className="font-bold text-sm">Jean Marketer</span>
                         <span className="text-base-content/40 text-xs">@jean_seo · 2m</span>
                     </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-base-content/80 whitespace-pre-wrap break-words">{truncated}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-base-content/80 whitespace-pre-wrap break-words">
+                        {truncated || <span className="text-base-content/20 italic">Votre tweet apparaîtra ici…</span>}
+                    </p>
                     <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center gap-4 text-base-content/30 text-xs">
                             <span className="hover:text-blue-400 cursor-pointer transition-colors">💬 4</span>
                             <span className="hover:text-green-400 cursor-pointer transition-colors">🔁 12</span>
                             <span className="hover:text-red-400 cursor-pointer transition-colors">❤️ 48</span>
                         </div>
-                        <span className={`text-xs font-medium ${remainColor}`}>{remaining}</span>
+                        <span className={`text-xs font-medium tabular-nums ${remainColor}`}>
+                          {remaining}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -42,7 +78,9 @@ function TwitterPreview({content}: {content: string}) {
 }
 
 function LinkedinPreview({content}: {content: string}) {
-    const hasContent = content.trim().length > 0 && content !== "<p></p>";
+    const [expanded, setExpanded] = useState(false);
+    const safeContent = content ?? "";
+    const hasContent = safeContent.trim().length > 0 && safeContent !== "<p></p>";
 
     return (
         <div className="rounded-xl border border-base-300 bg-base-100 p-4 text-sm">
@@ -55,10 +93,17 @@ function LinkedinPreview({content}: {content: string}) {
                 </div>
             </div>
             <div
-                className="prose prose-xs max-w-none text-base-content/80 line-clamp-6 [&>*]:mb-1 [&>*:last-child]:mb-0"
-                dangerouslySetInnerHTML={{__html: hasContent ? content : ''}}
+                className={`${PROSE_CLASSES} ${expanded ? "" : "line-clamp-6"}`}
+                dangerouslySetInnerHTML={{__html: hasContent ? safeContent : ""}}
             />
-            <p className="text-blue-600 text-xs mt-1.5 cursor-pointer">…voir plus</p>
+            {hasContent && (
+                <button
+                    onClick={() => setExpanded(v => !v)}
+                    className="text-blue-600 text-xs mt-1.5 cursor-pointer hover:underline"
+                >
+                    {expanded ? "Voir moins" : "…voir plus"}
+                </button>
+            )}
             <div className="flex items-center gap-4 mt-3 pt-3 border-t border-base-200 text-base-content/40 text-xs">
                 <span className="hover:text-blue-500 cursor-pointer transition-colors">👍 J&apos;aime</span>
                 <span className="hover:text-blue-500 cursor-pointer transition-colors">💬 Commenter</span>
@@ -69,7 +114,8 @@ function LinkedinPreview({content}: {content: string}) {
 }
 
 function InstagramPreview({content}: {content: string}) {
-    const plain = stripHtml(content).trim();
+    const [expanded, setExpanded] = useState(false);
+    const plain = toReadableText(content ?? "");
 
     return (
         <div className="rounded-xl border border-base-300 bg-base-100 overflow-hidden text-sm">
@@ -90,14 +136,25 @@ function InstagramPreview({content}: {content: string}) {
                         <span>💬 18</span>
                     </div>
                 </div>
-                <p className="text-xs leading-relaxed text-base-content/80 line-clamp-4 whitespace-pre-wrap">{plain}</p>
+                <p className={`text-xs leading-relaxed text-base-content/80 whitespace-pre-wrap break-words ${expanded ? "" : "line-clamp-4"}`}>
+                    {plain || <span className="text-base-content/20 italic">Votre légende apparaîtra ici…</span>}
+                </p>
+                {plain.length > 0 && (
+                    <button
+                        onClick={() => setExpanded(v => !v)}
+                        className="text-blue-500 text-xs mt-1 cursor-pointer hover:underline"
+                    >
+                        {expanded ? "Voir moins" : "…voir plus"}
+                    </button>
+                )}
             </div>
         </div>
     );
 }
 
 function BlogPreview({content}: {content: string}) {
-    const hasContent = content.trim().length > 0 && content !== "<p></p>";
+    const [expanded, setExpanded] = useState(false);
+    const hasContent = (content ?? "").trim().length > 0 && content !== "<p></p>";
 
     return (
         <div className="rounded-xl border border-base-300 bg-base-100 p-4 text-sm">
@@ -108,10 +165,17 @@ function BlogPreview({content}: {content: string}) {
                 <span>5 min de lecture</span>
             </div>
             <div
-                className="prose prose-xs max-w-none text-base-content/80 line-clamp-8 [&>h1]:text-base [&>h1]:font-bold [&>h2]:text-sm [&>h2]:font-bold [&>h3]:text-sm [&>h3]:font-semibold [&>*]:mb-1.5 [&>*:last-child]:mb-0"
-                dangerouslySetInnerHTML={{__html: hasContent ? content : ''}}
+                className={`${PROSE_CLASSES} ${expanded ? "" : "line-clamp-8"}`}
+                dangerouslySetInnerHTML={{__html: hasContent ? content : ""}}
             />
-            <p className="text-blue-600 text-xs mt-2 cursor-pointer">…lire la suite</p>
+            {hasContent && (
+                <button
+                    onClick={() => setExpanded(v => !v)}
+                    className="text-blue-600 text-xs mt-2 cursor-pointer hover:underline"
+                >
+                    {expanded ? "Lire moins" : "…lire la suite"}
+                </button>
+            )}
         </div>
     );
 }
