@@ -38,8 +38,8 @@ export default function Navbar({ onToggleSidebar, user }: NavbarProps) {
                     className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-lg hover:bg-base-200 transition-colors"
                 >
                     <div className="avatar placeholder">
-                        <div className="bg-neutral text-neutral-content rounded-full w-8">
-                            <span className="text-xs">DJ</span>
+                        <div className="bg-neutral text-neutral-content rounded-full w-8 h-8 flex items-center justify-center">
+                            <span className="text-xs leading-none">DJ</span>
                         </div>
                     </div>
                     <span className="text-sm font-medium hidden sm:block">
