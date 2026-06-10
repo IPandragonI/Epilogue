@@ -7,7 +7,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { PlatformEnum } from '../../content-idea/entities/platform.enum';
+import { PlatformEnum } from '../../suggested-topic/entities/platform.enum';
 
 export class CreateContentDto {
   @IsString()

@@ -9,6 +9,7 @@ import {
 import { UserRole } from './userRole.enum';
 import { Agency } from '../../agency/entities/agency.entity';
 import { Content } from '../../content/entities/content.entity';
+import { SuggestedTopic } from '../../suggested-topic/entities/suggested-topic.entity';
 
 @Entity('users')
 export class User {
@@ -45,6 +46,9 @@ export class User {
 
   @OneToMany(() => Content, (content: any) => content.user)
   contents: Content[];
+
+  @OneToMany(() => SuggestedTopic, (suggestedTopic) => suggestedTopic.user)
+  suggestedTopics: SuggestedTopic[];
 
   @Column({ type: 'int', default: 0 })
   nbTokenUsedThisMonth!: number;

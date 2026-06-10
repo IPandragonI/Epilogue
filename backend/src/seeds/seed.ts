@@ -6,16 +6,15 @@ import { AppModule } from '../app.module';
 
 import { Agency } from '../modules/agency/entities/agency.entity';
 import { User } from '../modules/users/entities/user.entity';
-import { Topic } from '../modules/topic/entities/topic.entity';
 import { Content } from '../modules/content/entities/content.entity';
 import { ContentSeo } from '../modules/content-seo/entities/content-seo.entity';
-import { ContentIdea } from '../modules/content-idea/entities/content-idea.entity';
+import { SuggestedTopic } from '../modules/suggested-topic/entities/suggested-topic.entity';
 import { CurationSource } from '../modules/curation-source/entities/curation-source.entity';
 import { CurationItem } from '../modules/curation-item/entities/curation-item.entity';
 import { SubscriptionPlan } from '../modules/subscription-plan/entities/subscription-plan.entity';
 
 import { agencyData } from './data/agency.data';
-import { topicData } from './data/topic.data';
+import { suggestedTopicData } from './data/suggested-topic.data';
 import { userData } from './data/user.data';
 import { contentData } from './data/content.data';
 import { curationData } from './data/curation.data';
@@ -33,9 +32,8 @@ async function seed() {
       CurationItem,
       CurationSource,
       ContentSeo,
-      ContentIdea,
+      SuggestedTopic,
       Content,
-      Topic,
       User,
       Agency,
     ];
@@ -75,9 +73,14 @@ async function seed() {
     );
     console.log('✅ Users seeded');
 
-    const topicRepo = dataSource.getRepository(Topic);
-    const topics = await topicRepo.save(topicRepo.create(topicData()));
-    console.log('✅ Topics seeded');
+    const suggestedTopicRepo = dataSource.getRepository(SuggestedTopic);
+    const suggestedTopicsPayload = users.flatMap((user) =>
+      suggestedTopicData(user.id),
+    );
+    await suggestedTopicRepo.save(
+      suggestedTopicRepo.create(suggestedTopicsPayload),
+    );
+    console.log('✅ Suggested topics seeded');
 
     const contentRepo = dataSource.getRepository(Content);
     const contentPayloads = contentData();

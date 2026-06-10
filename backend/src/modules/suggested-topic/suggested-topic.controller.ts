@@ -1,3 +1,7 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { SuggestedTopicService } from './suggested-topic.service';
+import { CreateSuggestedTopicDto } from './dto/create-suggested-topic.dto';
+import { UpdateSuggestedTopicDto } from './dto/update-suggested-topic.dto';
 import {
   Controller,
   Get,
@@ -20,11 +24,12 @@ import {
   SubscriptionFeatureEnum,
 } from '../../auth/decorators/subscription.decorator';
 
-@Controller('content-idea')
-export class ContentIdeaController {
-  constructor(private readonly contentIdeaService: ContentIdeaService) {}
+@Controller('suggested-topic')
+export class SuggestedTopicController {
+  constructor(private readonly contentIdeaService: SuggestedTopicService) {}
 
   @Post()
+  create(@Body() createContentIdeaDto: CreateSuggestedTopicDto) {
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @UseInterceptors(UsageTrackingInterceptor)
   @SubscriptionFeature(SubscriptionFeatureEnum.IDEA_GENERATION)
@@ -43,7 +48,7 @@ export class ContentIdeaController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateContentIdeaDto: UpdateContentIdeaDto) {
+  update(@Param('id') id: string, @Body() updateContentIdeaDto: UpdateSuggestedTopicDto) {
     return this.contentIdeaService.update(id, updateContentIdeaDto);
   }
 

@@ -2,22 +2,32 @@
 import Link from "next/link";
 import {useRouter} from "next/navigation";
 import {ArrowLeft, PenLine} from "lucide-react";
-import {ContentIdea, Platform, PlatformConfig} from "@/app/types/types";
+import {Platform, PlatformConfig, SuggestedTopic} from "@/app/types/types";
 
-const IDEA: ContentIdea = {
-    id: 1,
-    title: "Le SEO en 2026 : Ce qui fonctionne vraiment",
-    createdAt: "11 Jan 2022",
-    platform: Platform.LINKEDIN,
-    description: "Le référencement évolue rapidement. Découvrez les stratégies SEO réellement efficaces en 2026 pour améliorer votre visibilité, attirer du trafic qualifié et rester compétitif face aux nouvelles exigences des moteurs de recherche. De l'importance du contenu de qualité à l'impact de l'IA, explorez les tendances clés qui façonnent le paysage du SEO et comment les intégrer dans votre stratégie digitale."
+const API_PLATFORM_TO_UI = {
+    BLOG: Platform.BLOG,
+    LINKEDIN: Platform.LINKEDIN,
+    TWITTER: Platform.TWITTER,
+    INSTAGRAM: Platform.INSTAGRAM,
+} as const;
+
+const SUGGESTED_TOPIC: SuggestedTopic = {
+    id: "seed-idea-1",
+    topic: "Le SEO en 2026 : Ce qui fonctionne vraiment",
+    topicDescription: "Le référencement évolue rapidement. Découvrez les stratégies SEO réellement efficaces en 2026 pour améliorer votre visibilité, attirer du trafic qualifié et rester compétitif face aux nouvelles exigences des moteurs de recherche. De l'importance du contenu de qualité à l'impact de l'IA, explorez les tendances clés qui façonnent le paysage du SEO et comment les intégrer dans votre stratégie digitale.",
+    recommendedPlatform: "LINKEDIN",
+    userId: "seed-user",
+    createdAt: "2026-01-11T00:00:00.000Z",
+    updatedAt: "2026-01-11T00:00:00.000Z",
 };
 
 export default function IdeeDetailPage() {
     const router = useRouter();
-    const config = PlatformConfig[IDEA.platform];
+    const uiPlatform = API_PLATFORM_TO_UI[SUGGESTED_TOPIC.recommendedPlatform];
+    const config = PlatformConfig[uiPlatform];
 
     const handleEdit = () => {
-        router.push(`/content/writing?idea=${IDEA.id}`);
+        router.push(`/content/writing?idea=${SUGGESTED_TOPIC.id}`);
     };
 
     return (
@@ -30,7 +40,7 @@ export default function IdeeDetailPage() {
                     Génération d&apos;idées
                 </Link>
                 <span className="text-base-content/30 text-sm">›</span>
-                <span className="text-sm text-base-content/40 line-clamp-1">{IDEA.title}</span>
+                <span className="text-sm text-base-content/40 line-clamp-1">{SUGGESTED_TOPIC.topic}</span>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-5 flex-1">
@@ -40,17 +50,17 @@ export default function IdeeDetailPage() {
                             <div className="flex items-center gap-2">
                                 <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${config.bg} ${config.color}`}>
                                   {config.icon}
-                                    {IDEA.platform}
+                                    {uiPlatform}
                                 </span>
-                                <span className="text-xs text-base-content/40">{IDEA.createdAt}</span>
+                                <span className="text-xs text-base-content/40">{new Date(SUGGESTED_TOPIC.createdAt).toLocaleDateString("fr-FR")}</span>
                             </div>
 
                             <h1 className="text-xl font-bold font-display leading-snug">
-                                {IDEA.title}
+                                {SUGGESTED_TOPIC.topic}
                             </h1>
 
                             <p className="text-sm text-base-content/60 leading-relaxed">
-                                {IDEA.description}
+                                {SUGGESTED_TOPIC.topicDescription}
                             </p>
                         </div>
                     </div>
@@ -80,14 +90,14 @@ export default function IdeeDetailPage() {
                             </h2>
                             <div className={`flex items-center gap-2 text-sm font-medium ${config.color}`}>
                                 {config.icon}
-                                {IDEA.platform}
+                                {uiPlatform}
                             </div>
                             <p className="text-xs text-base-content/40 leading-relaxed">
-                                {IDEA.platform === Platform.LINKEDIN &&
+                                {uiPlatform === Platform.LINKEDIN &&
                                     "Format court à moyen, ton professionnel, accroche forte, 1 hashtag par thème."}
-                                {IDEA.platform === Platform.INSTAGRAM &&
+                                {uiPlatform === Platform.INSTAGRAM &&
                                     "Visuel fort, légende courte et engageante, 5–10 hashtags pertinents."}
-                                {IDEA.platform === Platform.BLOG &&
+                                {uiPlatform === Platform.BLOG &&
                                     "Article long format (+800 mots), structuré en Hn, optimisé SEO on-page."}
                             </p>
                         </div>

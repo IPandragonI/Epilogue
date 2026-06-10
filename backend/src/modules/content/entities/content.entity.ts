@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ContentStatusEnum } from './contentStatus.enum';
-import { PlatformEnum } from '../../content-idea/entities/platform.enum';
+import { PlatformEnum } from '../../suggested-topic/entities/platform.enum';
 import { ContentSeo } from 'src/modules/content-seo/entities/content-seo.entity';
 import { ContentNotion } from 'src/modules/content-notion/entities/content-notion.entity';
 import { User } from '../../users/entities/user.entity';
