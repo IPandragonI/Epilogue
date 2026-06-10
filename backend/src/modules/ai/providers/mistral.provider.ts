@@ -1,8 +1,15 @@
-import { AIProvider } from '../interfaces/ai-provider.interface';
+import {
+  AIProvider,
+} from '../interfaces/ai-provider.interface';
 import { postJSON } from '../utils/http';
 import { MistralResponse } from '../interfaces/ai-responses.interface';
 import { InternalServerErrorException } from '@nestjs/common';
 import { PromptService } from '../prompt.service';
+import { PlatformEnum } from '../../suggested-topic/entities/platform.enum';
+import {
+  GeneratedSuggestedTopic,
+  SuggestedTopicGenerationContext,
+} from '../../suggested-topic/interfaces/suggested-topic-generation.interface';
 
 export class MistralProvider implements AIProvider {
   constructor(private readonly promptService: PromptService) {}
@@ -229,6 +236,58 @@ export class MistralProvider implements AIProvider {
       references: Array.isArray(parsed.references) ? parsed.references : [],
     };
   }
+
+  async generateSuggestedTopics(
+    terms: string,
+    context: SuggestedTopicGenerationContext,
+  ): Promise<GeneratedSuggestedTopic[]> {
+    const systemPrompt = this.promptService.getPrompt('suggest-theme');
+    const targetCount = getSuggestedTopicCount(terms);
+
+    const response: MistralResponse = await postJSON<MistralResponse>(
+      'https://api.mistral.ai/v1/chat/completions',
+      {
+        model: 'mistral-small-latest',
+        response_format: { type: 'json_object' },
+        max_tokens: 1800,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    terms,
+                    targetCount,
+                    curationItems: context.curationItems,
+                    contentHistory: context.contentHistory,
+                    existingTopics: context.existingTopics,
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          },
+        ],
+      },
+      { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` },
+    );
+
+    const parsed = JSON.parse(cleanJsonResponse(response.choices[0].message.content));
+    const ideas = Array.isArray(parsed?.ideas) ? parsed.ideas : [];
+    const normalizedIdeas = normalizeGeneratedSuggestedTopics(ideas);
+
+    if (!normalizedIdeas.length) {
+      throw new InternalServerErrorException(
+        'Failed to generate valid suggested topics',
+      );
+    }
+
+    return normalizedIdeas.slice(0, targetCount);
+  }
 }
 
 interface LengthConfig {
@@ -364,4 +423,83 @@ function truncateHtmlByWords(html: string, maxWords: number): string {
   }
 
   return result.trim();
+}
+
+function cleanJsonResponse(content: unknown): string {
+  return String(content ?? '')
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/g, '')
+    .trim();
+}
+
+function getSuggestedTopicCount(terms: string): number {
+  const tokenCount = terms
+    .split(/[\s,;|/]+/)
+    .map((token) => token.trim())
+    .filter(Boolean).length;
+
+  if (tokenCount >= 8) return 1;
+  if (tokenCount >= 4) return 2;
+  return 3;
+}
+
+function normalizeGeneratedSuggestedTopics(
+  ideas: unknown[],
+): GeneratedSuggestedTopic[] {
+  const seenTopics = new Set<string>();
+
+  return ideas
+    .map((idea) => {
+      const topic = truncatePlainText((idea as any)?.topic, 255);
+      const topicDescription = truncatePlainText(
+        (idea as any)?.topicDescription,
+        2000,
+      );
+      const recommendedPlatform = normalizePlatform(
+        (idea as any)?.recommendedPlatform,
+      );
+
+      if (!topic || !topicDescription || !recommendedPlatform) {
+        return null;
+      }
+
+      const normalizedKey = topic.toLowerCase();
+
+      if (seenTopics.has(normalizedKey)) {
+        return null;
+      }
+
+      seenTopics.add(normalizedKey);
+
+      return {
+        topic,
+        topicDescription,
+        recommendedPlatform,
+      };
+    })
+    .filter((idea): idea is GeneratedSuggestedTopic => idea !== null);
+}
+
+function truncatePlainText(value: unknown, maxLength: number): string {
+  return String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function normalizePlatform(value: unknown): PlatformEnum | null {
+  const normalizedValue = String(value ?? '').trim().toUpperCase();
+
+  switch (normalizedValue) {
+    case PlatformEnum.BLOG:
+      return PlatformEnum.BLOG;
+    case PlatformEnum.LINKEDIN:
+      return PlatformEnum.LINKEDIN;
+    case PlatformEnum.TWITTER:
+      return PlatformEnum.TWITTER;
+    case PlatformEnum.INSTAGRAM:
+      return PlatformEnum.INSTAGRAM;
+    default:
+      return null;
+  }
 }

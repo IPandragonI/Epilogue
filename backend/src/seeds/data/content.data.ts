@@ -1,4 +1,4 @@
-import { PlatformEnum } from '../../modules/content-idea/entities/platform.enum';
+import { PlatformEnum } from '../../modules/suggested-topic/entities/platform.enum';
 import { ContentStatusEnum } from '../../modules/content/entities/contentStatus.enum';
 
 export const contentData = () => [

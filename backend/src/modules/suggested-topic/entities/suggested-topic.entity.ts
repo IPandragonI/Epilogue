@@ -1,20 +1,32 @@
-import { Topic } from 'src/modules/topic/entities/topic.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { PlatformEnum } from './platform.enum';
 
-@Entity('content_ideas')
-export class ContentIdea {
+@Entity('suggested_topics')
+export class SuggestedTopic {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  title!: string;
+  topic!: string;
 
   @Column({ type: 'text' })
-  description!: string;
+  topicDescription!: string;
 
-  @ManyToOne(() => Topic, { nullable: true, eager: true })
-  topic?: Topic;
+  @Column({ type: 'uuid' })
+  userId!: string;
+
+  @ManyToOne(() => User, (user) => user.suggestedTopics, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'userId' })
+  user!: User;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
@@ -31,5 +43,5 @@ export class ContentIdea {
     enum: PlatformEnum,
     default: PlatformEnum.DRAFT,
   })
-  platform!: PlatformEnum;
+  recommendedPlatform!: PlatformEnum;
 }

@@ -1,15 +1,27 @@
 "use client";
 
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {CheckCircle2, Sparkles, ArrowRight} from "lucide-react";
-import {Platform, PlatformConfig, PlatformType} from "@/app/types/types";
+import {Platform, PlatformConfig, PlatformType, SuggestedTopic} from "@/app/types/types";
 import Preview from "@/app/components/content/writing/Preview";
 import TextEditor from "@/app/components/content/writing/TextEditor";
 import Swal from "sweetalert2";
-import {useRouter} from "next/navigation";
+import Link from "next/link";
+import {useRouter, useSearchParams} from "next/navigation";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+const API_PLATFORM_TO_UI: Record<SuggestedTopic["recommendedPlatform"], PlatformType> = {
+    BLOG: Platform.BLOG,
+    LINKEDIN: Platform.LINKEDIN,
+    TWITTER: Platform.TWITTER,
+    INSTAGRAM: Platform.INSTAGRAM,
+};
 
 export default function WritingPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const ideaId = searchParams.get("idea");
 
     const [platform, setPlatform] = useState<PlatformType>(Platform.LINKEDIN);
     const [content, setContent] = useState("");
@@ -21,6 +33,9 @@ export default function WritingPage() {
     const [title, setTitle] = useState("");
     const [saving, setSaving] = useState(false);
     const [charCount, setCharCount] = useState(0);
+    const [selectedIdea, setSelectedIdea] = useState<SuggestedTopic | null>(null);
+    const [loadingIdea, setLoadingIdea] = useState(false);
+    const [ideaError, setIdeaError] = useState<string | null>(null);
 
     const currentPlatform = PlatformConfig[platform];
     const isEmpty = !content || content.replace(/<[^>]*>/g, "").trim().length === 0;
@@ -34,13 +49,51 @@ export default function WritingPage() {
         timerProgressBar: true,
     });
 
+    useEffect(() => {
+        if (!ideaId) {
+            setSelectedIdea(null);
+            setIdeaError(null);
+            return;
+        }
+
+        const fetchIdea = async () => {
+            try {
+                setLoadingIdea(true);
+                setIdeaError(null);
+
+                const res = await fetch(`${API_URL}/suggested-topic/${ideaId}`, {
+                    cache: "no-store",
+                    credentials: "include",
+                });
+
+                if (!res.ok) {
+                    throw new Error();
+                }
+
+                const idea: SuggestedTopic = await res.json();
+
+                setSelectedIdea(idea);
+                setPlatform(API_PLATFORM_TO_UI[idea.recommendedPlatform]);
+                setPrompt(`${idea.topic}\n\n${idea.topicDescription}`);
+                setTitle(idea.topic);
+            } catch {
+                setSelectedIdea(null);
+                setIdeaError("Impossible de charger l'idée sélectionnée.");
+            } finally {
+                setLoadingIdea(false);
+            }
+        };
+
+        fetchIdea();
+    }, [ideaId]);
+
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
         try {
             setGenerating(true);
             setContent("");
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/generate-post`, {
+            const res = await fetch(`${API_URL}/ai/generate-post`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 credentials: "include",
@@ -79,7 +132,7 @@ export default function WritingPage() {
         try {
             setSaving(true);
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/content`, {
+            const res = await fetch(`${API_URL}/content`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 credentials: "include",
@@ -113,6 +166,23 @@ export default function WritingPage() {
                         Transformez vos articles SEO en contenu viral pour chaque platform.
                     </p>
                 </div>
+
+                { /*selectedIdea && (
+                    <div className="alert alert-info bg-base-100 border border-base-300 text-sm">
+                        <span>
+                            Idée chargée : <strong>{selectedIdea.topic}</strong>
+                        </span>
+                        <Link href={`/content/suggested-topics/${selectedIdea.id}`} className="link link-hover ml-auto">
+                            Voir l&apos;idée
+                        </Link>
+                    </div>
+                ) Barre suplémentaire de chargement pour feeback utilisateur : non fonctionnelle pour le moment */}
+
+                {ideaError && (
+                    <div className="alert alert-error text-sm">
+                        <span>{ideaError}</span>
+                    </div>
+                )}
 
                 <div className="flex flex-wrap gap-3">
                     {(Object.entries(PlatformConfig) as [PlatformType, (typeof PlatformConfig)[PlatformType]][]).map(
@@ -213,11 +283,11 @@ export default function WritingPage() {
 
                         <button
                             onClick={handleGenerate}
-                            disabled={generating || !prompt.trim()}
+                            disabled={generating || loadingIdea || !prompt.trim()}
                             className="btn btn-outline btn-sm w-full gap-2 rounded-lg"
                         >
-                            {generating ? <span className="loading loading-spinner loading-xs"/> : <Sparkles size={13}/>}
-                            {generating ? "Génération..." : "Générer"}
+                            {generating || loadingIdea ? <span className="loading loading-spinner loading-xs"/> : <Sparkles size={13}/>} 
+                            {loadingIdea ? "Chargement..." : generating ? "Génération..." : "Générer"}
                         </button>
                     </div>
                 </div>

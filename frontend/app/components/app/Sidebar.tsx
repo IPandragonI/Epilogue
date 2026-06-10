@@ -39,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
         icon: <FileText size={18}/>,
         children: [
             {label: "Mes posts", href: "/content/posts"},
-            {label: "Génération d'idées", href: "/content/ideas"},
+            {label: "Génération d'idées", href: "/content/suggested-topics"},
             {label: "Rédaction de contenus", href: "/content/writing"},
         ],
     },

@@ -1,3 +1,8 @@
+import {
+  GeneratedSuggestedTopic,
+  SuggestedTopicGenerationContext,
+} from '../../suggested-topic/interfaces/suggested-topic-generation.interface';
+
 export interface AIProvider {
   generateText(prompt: string): Promise<string>;
   uploadFile(file: Express.Multer.File): Promise<string>;
@@ -22,4 +27,9 @@ export interface AIProvider {
     tags: string[];
     references: string[];
   }>;
+
+  generateSuggestedTopics(
+    terms: string,
+    context: SuggestedTopicGenerationContext,
+  ): Promise<GeneratedSuggestedTopic[]>;
 }

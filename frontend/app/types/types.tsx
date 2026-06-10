@@ -84,21 +84,12 @@ export interface ContentNotion {
     notionPageId?: string;
 }
 
-export interface ContentIdea {
-    id: number;
-    title: string;
-    description: string;
-    topic?: Topic;
-    platform: PlatformType;
-    createdAt: string;
-    updatedAt?: string;
-}
-
-export interface Topic {
-    id: number;
-    name: string;
-    description?: string;
-    color?: string;
+export interface SuggestedTopic {
+    id: string;
+    topic: string;
+    topicDescription: string;
+    recommendedPlatform: "BLOG" | "LINKEDIN" | "TWITTER" | "INSTAGRAM";
+    userId: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -110,7 +101,7 @@ export interface StatCard {
 }
 
 export interface CurationItems {
-    id: number;
+    id: string;
     title: string;
     lastFetchedAt: string;
     summary?: string;

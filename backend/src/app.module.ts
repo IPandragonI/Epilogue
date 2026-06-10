@@ -8,9 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { AiModule } from './modules/ai/ai.module';
 import { UsersModule } from './modules/users/users.module';
-import { ContentIdeaModule } from './modules/content-idea/content-idea.module';
+import { SuggestedTopicModule } from './modules/suggested-topic/suggested-topic.module';
 import { AgencyModule } from './modules/agency/agency.module';
-import { TopicModule } from './modules/topic/topic.module';
 import { ContentModule } from './modules/content/content.module';
 import { CurationItemModule } from './modules/curation-item/curation-item.module';
 import { CurationSourceModule } from './modules/curation-source/curation-source.module';
@@ -34,9 +33,8 @@ import { PaymentModule } from './modules/payment/payment.module';
     UsersModule,
     AiModule,
     AuthModule,
-    ContentIdeaModule,
+    SuggestedTopicModule,
     AgencyModule,
-    TopicModule,
     ContentModule,
     CurationSourceModule,
     CurationItemModule,

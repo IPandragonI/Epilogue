@@ -2,6 +2,10 @@ import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common
 import { AI_PROVIDER } from './ai.provider';
 import * as aiProviderInterface from './interfaces/ai-provider.interface';
 import { ScrappingService } from './scrapping.service';
+import {
+  GeneratedSuggestedTopic,
+  SuggestedTopicGenerationContext,
+} from '../suggested-topic/interfaces/suggested-topic-generation.interface';
 
 @Injectable()
 export class AIService {
@@ -54,6 +58,19 @@ export class AIService {
     } catch (error) {
       throw new InternalServerErrorException(
         `Erreur lors de la génération du post : ${error.message}`,
+      );
+    }
+  }
+
+  async generateSuggestedTopics(
+    terms: string,
+    context: SuggestedTopicGenerationContext,
+  ): Promise<GeneratedSuggestedTopic[]> {
+    try {
+      return await this.provider.generateSuggestedTopics(terms, context);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Erreur lors de la génération des idées : ${error.message}`,
       );
     }
   }
