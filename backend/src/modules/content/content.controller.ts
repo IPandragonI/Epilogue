@@ -21,16 +21,6 @@ export class ContentController {
     return this.contentService.create(createContentDto);
   }
 
-  @Get()
-  findAll() {
-    return this.contentService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.contentService.findOne(id);
-  }
-
   @Get('with-seo')
   findAllWithSEO() {
     return this.contentService.findAllWithSEO();
@@ -47,6 +37,16 @@ export class ContentController {
   @Get('stats')
   getStats() {
     return this.contentService.getStats();
+  }
+
+  @Get()
+  findAll() {
+    return this.contentService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.contentService.findOne(id);
   }
 
   @Patch(':id')

@@ -19,10 +19,10 @@ export const NotionSyncStatus = {
 export type NotionSyncStatusType = (typeof NotionSyncStatus)[keyof typeof NotionSyncStatus];
 
 export const Platform = {
-    BLOG: "Blog",
-    LINKEDIN: "LinkedIn",
-    TWITTER: "Twitter",
-    INSTAGRAM: "Instagram",
+    BLOG: "BLOG",
+    LINKEDIN: "LINKEDIN",
+    TWITTER: "TWITTER",
+    INSTAGRAM: "INSTAGRAM",
 } as const;
 
 export type PlatformType = (typeof Platform)[keyof typeof Platform];
@@ -47,7 +47,7 @@ export const PlatformConfig: Record<PlatformType, { label: string; subLabel: str
     [Platform.BLOG]: {
         label: "Blog",
         subLabel: "Article de blog",
-        maxLength: 5000,
+        maxLength: 10000,
         icon: <Globe size={14}/>,
         color: "text-yellow-700",
         bg: "bg-yellow-100",

@@ -20,6 +20,7 @@ type Props = {
     content: string;
     onChange: (value: string) => void;
     maxChars?: number;
+    onCharsChange?: (chars: number) => void;
     placeholder?: string;
 };
 
@@ -52,7 +53,7 @@ function ToolBtn({onClick, active, title, children}: {
     );
 }
 
-export default function TextEditor({content, onChange, maxChars, placeholder = "Commencez à taper..."}: Props) {
+export default function TextEditor({content, onChange, maxChars, onCharsChange, placeholder = "Commencez à taper..."}: Props) {
     const editor = useEditor({
         extensions: [
             StarterKit.configure({heading: {levels: [1, 2, 3]}}),
@@ -67,7 +68,7 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
             TextAlign.configure({types: ["heading", "paragraph"]}),
             Underline,
             Highlight.configure({multicolor: false}),
-            ...(maxChars ? [CharacterCount.configure({limit: maxChars})] : []),
+            CharacterCount,
         ],
         content,
         immediatelyRender: false,
@@ -91,6 +92,7 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
         },
         onUpdate: ({editor}) => {
             onChange(editor.getHTML());
+            onCharsChange?.(editor.storage.characterCount?.characters() ?? 0);
         },
     });
 
@@ -123,14 +125,20 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
         if (!editor) return;
         if (editor.getHTML() !== content) {
             editor.commands.setContent(content || "", false);
+            onCharsChange?.(editor.storage.characterCount?.characters() ?? 0);
         }
     }, [content]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!editor) return null;
 
-    const chars = maxChars ? (editor.storage.characterCount?.characters() ?? 0) : null;
-    const charPercent = chars !== null && maxChars ? (chars / maxChars) * 100 : 0;
-    const charColor = charPercent > 90 ? "text-error" : charPercent > 70 ? "text-warning" : "text-base-content/40";
+    const chars = editor.storage.characterCount?.characters() ?? 0;
+    const charPercent = maxChars ? (chars / maxChars) * 100 : 0;
+    const charColor = !maxChars
+        ? "text-base-content/40"
+        : charPercent > 100 ? "text-error"
+            : charPercent > 90 ? "text-error"
+                : charPercent > 70 ? "text-warning"
+                    : "text-base-content/40";
 
     const handleSetLink = () => {
         const prev = editor.getAttributes("link").href ?? "";
@@ -294,12 +302,15 @@ export default function TextEditor({content, onChange, maxChars, placeholder = "
                 <EditorContent editor={editor}/>
             </div>
 
-            {maxChars && chars !== null && (
+            {maxChars && (
                 <div className="flex items-center justify-between px-4 py-2 border-t border-base-300 shrink-0">
-                    <span className={`text-xs ${charColor}`}>{chars} / {maxChars} caractères</span>
+                    <span className={`text-xs ${charColor}`}>
+                        {chars.toLocaleString("fr-FR")} / {maxChars.toLocaleString("fr-FR")} caractères
+                        {charPercent > 100 && " — limite dépassée"}
+                    </span>
                     <div className="w-24 h-1 bg-base-300 rounded-full overflow-hidden">
                         <div
-                            className={`h-full rounded-full transition-all ${charPercent > 90 ? "bg-error" : charPercent > 70 ? "bg-warning" : "bg-success"}`}
+                            className={`h-full rounded-full transition-all ${charPercent > 100 ? "bg-error" : charPercent > 70 ? "bg-warning" : "bg-success"}`}
                             style={{width: `${Math.min(charPercent, 100)}%`}}
                         />
                     </div>

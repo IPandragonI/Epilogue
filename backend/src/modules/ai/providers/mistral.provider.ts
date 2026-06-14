@@ -183,16 +183,23 @@ export class MistralProvider implements AIProvider {
     subject: string,
     tone: string,
     length: string,
-  ): Promise<{ title: string; content: string; tags: string[]; references: string[] }> {
-      const systemPrompt = this.promptService.getPrompt('generate-post');
-      const lengthConfig = getLengthConfig(platform, length);
-      const hardCap      = Math.min(lengthConfig.max, ABSOLUTE_MAX);
+  ): Promise<{
+    title: string;
+    content: string;
+    tags: string[];
+    references: string[];
+  }> {
+    const systemPrompt = this.promptService.getPrompt('generate-post');
+    const lengthConfig = getLengthConfig(platform, length);
 
-      const response: MistralResponse = await postJSON<MistralResponse>(
+    const maxTokens = Math.min(Math.ceil(lengthConfig.maxWords * 1.6) + 400, 8000,);
+
+    const response: MistralResponse = await postJSON<MistralResponse>(
       `https://api.mistral.ai/v1/chat/completions`,
       {
         model: 'mistral-small-latest',
         response_format: { type: 'json_object' },
+        max_tokens: maxTokens,
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -209,13 +216,16 @@ export class MistralProvider implements AIProvider {
       { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` },
     );
 
-    const parsed  = JSON.parse(response.choices[0].message.content as string);
-    const content = truncateHtml(parsed.content ?? '', hardCap);
+    const parsed = JSON.parse(response.choices[0].message.content as string);
+    const content = truncateHtmlByWords(
+      parsed.content ?? '',
+      lengthConfig.maxWords,
+    );
 
     return {
-      title:      parsed.title ?? '',
+      title: parsed.title ?? '',
       content,
-      tags:       Array.isArray(parsed.tags)       ? parsed.tags       : [],
+      tags: Array.isArray(parsed.tags) ? parsed.tags : [],
       references: Array.isArray(parsed.references) ? parsed.references : [],
     };
   }
@@ -223,7 +233,8 @@ export class MistralProvider implements AIProvider {
 
 interface LengthConfig {
   instruction: string;
-  max: number;
+  minWords: number;
+  maxWords: number;
 }
 
 type PlatformLengthMap = Record<string, Record<string, LengthConfig>>;
@@ -231,63 +242,74 @@ type PlatformLengthMap = Record<string, Record<string, LengthConfig>>;
 const PLATFORM_LENGTH_MAP: PlatformLengthMap = {
   linkedin: {
     court: {
-      instruction: 'court : 300 à 400 caractères HTML maximum',
-      max: 500,
+      instruction: 'court : entre 80 et 120 mots',
+      minWords: 80,
+      maxWords: 120,
     },
     moyen: {
-      instruction: 'moyen : 600 à 750 caractères HTML maximum',
-      max: 900,
+      instruction: 'moyen : entre 150 et 250 mots',
+      minWords: 150,
+      maxWords: 250,
     },
     long: {
-      instruction: 'long : 1000 à 1200 caractères HTML maximum',
-      max: 1400,
+      instruction: 'long : entre 300 et 400 mots',
+      minWords: 300,
+      maxWords: 400,
     },
   },
   twitter: {
     court: {
-      instruction: 'très court : 100 à 140 caractères HTML maximum',
-      max: 180,
+      instruction: 'très court : entre 15 et 25 mots',
+      minWords: 15,
+      maxWords: 25,
     },
     moyen: {
-      instruction: 'court : 150 à 180 caractères HTML maximum',
-      max: 220,
+      instruction: 'court : entre 25 et 35 mots',
+      minWords: 25,
+      maxWords: 35,
     },
     long: {
-      instruction: 'court : 200 à 240 caractères HTML maximum',
-      max: 260,
+      instruction: 'maximum : entre 35 et 45 mots',
+      minWords: 35,
+      maxWords: 45,
     },
   },
   instagram: {
     court: {
-      instruction: 'court : 200 à 300 caractères HTML maximum',
-      max: 400,
+      instruction: 'court : entre 40 et 60 mots',
+      minWords: 40,
+      maxWords: 60,
     },
     moyen: {
-      instruction: 'moyen : 400 à 550 caractères HTML maximum',
-      max: 700,
+      instruction: 'moyen : entre 80 et 120 mots',
+      minWords: 80,
+      maxWords: 120,
     },
     long: {
-      instruction: 'long : 700 à 900 caractères HTML maximum',
-      max: 1100,
+      instruction: 'long : entre 130 et 180 mots',
+      minWords: 130,
+      maxWords: 180,
     },
   },
   blog: {
     court: {
-      instruction: 'court : 500 à 650 caractères HTML maximum',
-      max: 800,
+      instruction: 'court : entre 500 et 1000 mots',
+      minWords: 500,
+      maxWords: 1000,
     },
     moyen: {
-      instruction: 'moyen : 900 à 1100 caractères HTML maximum',
-      max: 1400,
+      instruction: 'moyen : entre 1500 et 2500 mots',
+      minWords: 1500,
+      maxWords: 2500,
     },
     long: {
-      instruction: 'long : 1500 à 1800 caractères HTML maximum',
-      max: 2100,
+      instruction: 'long : entre 4000 et 5500 mots',
+      minWords: 4000,
+      maxWords: 5500,
     },
   },
 };
 
-const ABSOLUTE_MAX = 2900;
 const DEFAULT_PLATFORM = 'linkedin';
 const DEFAULT_LENGTH = 'moyen';
 
@@ -298,20 +320,48 @@ function getLengthConfig(platform: string, length: string): LengthConfig {
   return platformMap[length] ?? platformMap[DEFAULT_LENGTH];
 }
 
-function truncateHtml(html: string, maxChars: number): string {
-  if (html.length <= maxChars) return html;
+function truncateHtmlByWords(html: string, maxWords: number): string {
+  const wordMargin = Math.ceil(maxWords * 1.1);
 
-  let truncated = html.slice(0, maxChars);
+  let wordCount = 0;
+  let result = '';
+  const tagStack: string[] = [];
 
-  const lastOpen = truncated.lastIndexOf('<');
-  const lastClose = truncated.lastIndexOf('>');
-  if (lastOpen > lastClose) {
-    truncated = truncated.slice(0, lastOpen);
+  const tokens = html.match(/<[^>]+>|[^<]+/g) || [];
+
+  for (const token of tokens) {
+    if (wordCount >= wordMargin) break;
+
+    if (token.startsWith('<')) {
+      const isClosing = token.startsWith('</');
+      const isSelfClosing = token.endsWith('/>');
+      const tagName = token.match(/^<\/?([a-z0-9]+)/i)?.[1]?.toLowerCase();
+
+      if (!tagName) continue;
+
+      if (isClosing) {
+        const idx = tagStack.lastIndexOf(tagName);
+        if (idx !== -1) tagStack.splice(idx, 1);
+      } else if (!isSelfClosing) {
+        tagStack.push(tagName);
+      }
+
+      result += token;
+    } else {
+      const parts = token.match(/\S+|\s+/g) || [];
+      for (const part of parts) {
+        if (/\S/.test(part)) {
+          if (wordCount >= wordMargin) break;
+          wordCount++;
+        }
+        result += part;
+      }
+    }
   }
 
-  if (!truncated.trimEnd().endsWith('>')) {
-    truncated += '</p>';
+  for (let i = tagStack.length - 1; i >= 0; i--) {
+    result += `</${tagStack[i]}>`;
   }
 
-  return truncated.trimEnd();
+  return result.trim();
 }

@@ -6,8 +6,11 @@ import {Platform, PlatformConfig, PlatformType} from "@/app/types/types";
 import Preview from "@/app/components/content/writing/Preview";
 import TextEditor from "@/app/components/content/writing/TextEditor";
 import Swal from "sweetalert2";
+import {useRouter} from "next/navigation";
 
 export default function WritingPage() {
+    const router = useRouter();
+
     const [platform, setPlatform] = useState<PlatformType>(Platform.LINKEDIN);
     const [content, setContent] = useState("");
     const [prompt, setPrompt] = useState("");
@@ -15,13 +18,19 @@ export default function WritingPage() {
     const [length, setLength] = useState("moyen");
     const [generating, setGenerating] = useState(false);
     const [genCount, setGenCount] = useState(0);
+    const [title, setTitle] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [charCount, setCharCount] = useState(0);
+
     const currentPlatform = PlatformConfig[platform];
+    const isEmpty = !content || content.replace(/<[^>]*>/g, "").trim().length === 0;
+    const isOverLimit = charCount > currentPlatform.maxLength;
 
     const Toast = Swal.mixin({
         toast: true,
         position: "top-end",
         showConfirmButton: false,
-        timer: 3000,
+        timer: 1500,
         timerProgressBar: true,
     });
 
@@ -39,11 +48,12 @@ export default function WritingPage() {
             });
 
             if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(errorText || "Erreur lors de la génération");
+                throw new Error();
             }
 
             const data: {title: string; content: string; tags: string[]} = await res.json();
+
+            setTitle(data.title);
 
             const html = [
                 `<h1>${data.title}</h1>`,
@@ -56,11 +66,41 @@ export default function WritingPage() {
             setContent(html);
             setGenCount(c => c + 1);
 
-            await Toast.fire({icon: "success", title: "Post généré avec succès"});
-        } catch (error: any) {
-            await Toast.fire({icon: "error", title: error?.message || "Erreur lors de la génération"});
+            await Toast.fire({icon: "success", title: "Contenu généré avec succès"});
+        } catch {
+            await Toast.fire({icon: "error", title: "Une erreur est survenue, veuillez réessayer"});
         } finally {
             setGenerating(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (isEmpty) return;
+        try {
+            setSaving(true);
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/content`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                credentials: "include",
+                body: JSON.stringify({
+                    title: title || "Sans titre",
+                    body: content,
+                    contentPlatform: platform,
+                }),
+            });
+
+            if (!res.ok) {
+                throw new Error();
+            }
+
+            const saved: {id: string} = await res.json();
+            await Toast.fire({icon: "success", title: "Post enregistré avec succès"});
+            router.push(`/content/posts/${saved.id}`);
+        } catch {
+            await Toast.fire({icon: "error", title: "Une erreur est survenue, veuillez réessayer"});
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -111,6 +151,7 @@ export default function WritingPage() {
                         content={content}
                         onChange={setContent}
                         maxChars={currentPlatform.maxLength}
+                        onCharsChange={setCharCount}
                         placeholder="Commencez à taper..."
                     />
                     {generating && (
@@ -188,10 +229,19 @@ export default function WritingPage() {
                     </div>
                 </div>
 
-                <button className="btn btn-accent gap-2 rounded-xl w-full">
-                    Ajouter votre post
-                    <ArrowRight size={15}/>
+                <button
+                    onClick={handleSave}
+                    disabled={isEmpty || saving || isOverLimit}
+                    className="btn btn-accent gap-2 rounded-xl w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {saving ? <span className="loading loading-spinner loading-xs"/> : <ArrowRight size={15}/>}
+                    {saving ? "Enregistrement..." : "Ajouter votre post"}
                 </button>
+                {isOverLimit && (
+                    <p className="text-xs text-error text-center">
+                        Le contenu dépasse la limite de {currentPlatform.maxLength.toLocaleString("fr-FR")} caractères pour {currentPlatform.label}.
+                    </p>
+                )}
             </div>
         </div>
     );

@@ -24,14 +24,16 @@ L'utilisateur te fournira :
 
 ## Longueur du contenu
 
-L'utilisateur précise une longueur via le paramètre "Length".
-La valeur indique une plage cible ET un maximum absolu en caractères HTML (balises comprises).
+L'utilisateur précise une longueur via le paramètre "Length", exprimée en nombre de mots (hors balises HTML).
 
-⚠️ RÈGLE ABSOLUE : ne dépasse JAMAIS le maximum indiqué. En cas de doute, arrête-toi avant.
-Mieux vaut un contenu légèrement plus court que de dépasser la limite.
-Si tu dois couper, termine proprement sur une phrase complète avant la limite.
+Respecte la plage indiquée. Si tu dois choisir, vise plutôt le milieu ou le bas de la plage plutôt que la limite haute.
+Ne compte que les mots du texte visible, pas les balises HTML.
 
 ## Format du champ "content"
+
+- **content** : le corps de la publication en HTML valide, dont la longueur en nombre de mots respecte la plage indiquée
+par le paramètre "Length" (300 à 500 mots par défaut si aucune longueur n'est précisée).
+Le texte doit être fluide, structuré et engageant.
 
 Le champ "title" sera affiché séparément en <h1> par l'application.
 Le champ "content" ne doit donc pas contenir de <h1>.
