@@ -47,7 +47,7 @@ export const PlatformConfig: Record<PlatformType, { label: string; subLabel: str
     [Platform.BLOG]: {
         label: "Blog",
         subLabel: "Article de blog",
-        maxLength: 10000,
+        maxLength: 15000,
         icon: <Globe size={14}/>,
         color: "text-yellow-700",
         bg: "bg-yellow-100",

@@ -9,6 +9,7 @@ import {
 import { ContentStatusEnum } from './contentStatus.enum';
 import { PlatformEnum } from '../../content-idea/entities/platform.enum';
 import { ContentSeo } from 'src/modules/content-seo/entities/content-seo.entity';
+import { ContentNotion } from 'src/modules/content-notion/entities/content-notion.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('contents')
@@ -55,6 +56,14 @@ export class Content {
   })
   @JoinColumn()
   seo!: ContentSeo;
+
+  @OneToOne(() => ContentNotion, {
+    cascade: true,
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn()
+  notion?: ContentNotion | null;
 
   @Column({ type: 'uuid', nullable: true })
   userId: string | null;

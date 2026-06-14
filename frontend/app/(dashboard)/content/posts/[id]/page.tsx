@@ -1,49 +1,192 @@
+"use client";
+
 import Link from "next/link";
-import {CheckCircle2, XCircle, RefreshCw} from "lucide-react";
+import {useEffect, useState} from "react";
+import {useRouter, useParams, notFound} from "next/navigation";
+import {CheckCircle2, XCircle, RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
-import ContentRenderer from "@/app/components/content/ContentRenderer";
-import {Content, NotionSyncStatus, Platform, ContentStatus} from "@/app/types/types";
+import TextEditor from "@/app/components/content/writing/TextEditor";
+import {Content, PlatformConfig, Platform, StatusLabels, ContentStatus} from "@/app/types/types";
+import Swal from "sweetalert2";
 
-const CONTENT: Content = {
-    id: 1,
-    title: "Guide SEO 2026 : Les tendances majeures",
-    seo: {
-        score: 78,
-        review: '[{"title":"Mots-clés principaux","detail":"Présence confirmée (8/10)","ok":true},{"title":"Structure Hn","detail":"Séquence logique H1 > H2","ok":true},{"title":"Densité de mots clés","detail":"Risque de suroptimisation","ok":false}]',
-        keywords: ["SEO", "IA", "Moteurs de recherche", "Tendances SEO 2026"]
-    },
-    date: "1/11/2050",
-    contentPlatform: Platform.LINKEDIN,
-    status: ContentStatus.PUBLISHED,
-    notion: {notionSyncStatus: NotionSyncStatus.SYNCED},
-    body: `Le SEO n'a jamais été un terrain stable, mais 2026 marque un tournant encore plus net : entre l'essor de l'IA, les nouvelles attentes des utilisateurs et les mutations des moteurs de recherche, les règles du jeu évoluent rapidement.
-Pour rester visible, il ne suffit plus d'optimiser des mots-clés — il faut comprendre l'écosystème global de la recherche.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-Voici les grandes tendances SEO à suivre en 2026.
-
-## 1. L'IA au cœur des résultats de recherche
-
-Les moteurs de recherche intègrent désormais massivement l'intelligence artificielle dans leurs résultats. Les réponses générées directement dans les pages (type "AI Overview") réduisent le besoin de cliquer sur les liens.
-
-Conséquence :
-• Moins de trafic organique classique
-• Plus de concurrence pour apparaître dans les réponses générées
-
-À faire :
-• Structurer son contenu de manière claire (questions/réponses)
-• Miser sur des contenus experts et approfondis
-• Optimiser pour être cité comme source par les IA`,
-};
-
-function parseReview(review: string) {
-    return JSON.parse(review) as { title: string; detail: string; ok: boolean }[];
+function parseReview(review?: string) {
+    if (!review) return [];
+    try {
+        return JSON.parse(review) as { title: string; detail: string; ok: boolean }[];
+    } catch {
+        return [];
+    }
 }
 
 function countWords(text: string) {
-    return text.trim().split(/\s+/).length;
+    if (!text) return 0;
+    const plain = text.replace(/<[^>]*>/g, " ");
+    return plain.trim().split(/\s+/).filter(Boolean).length;
 }
 
 export default function PostDetailPage() {
+    const router = useRouter();
+    const params = useParams();
+    const id = params.id as string;
+
+    const [content, setContent] = useState<Content | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [notFoundError, setNotFoundError] = useState(false);
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedBody, setEditedBody] = useState("");
+    const [editedTitle, setEditedTitle] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [syncing, setSyncing] = useState(false);
+    const [calculatingSeo, setCalculatingSeo] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    const [charCount, setCharCount] = useState(0);
+
+    const Toast = Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true,
+    });
+
+    useEffect(() => {
+        const fetchContent = async () => {
+            try {
+                const res = await fetch(`${API_URL}/content/${id}`, {
+                    cache: "no-store",
+                });
+
+                if (!res.ok) {
+                    setNotFoundError(true);
+                    return;
+                }
+
+                const data: Content = await res.json();
+                setContent(data);
+            } catch (error) {
+                console.error("Erreur lors de la récupération du contenu :", error);
+                setNotFoundError(true);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchContent();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <span className="loading loading-spinner loading-lg text-accent"/>
+            </div>
+        );
+    }
+
+    if (notFoundError || !content) {
+        notFound();
+    }
+
+    const currentPlatform = PlatformConfig[content.contentPlatform ?? Platform.BLOG];
+    const isOverLimit = charCount > currentPlatform.maxLength;
+
+    const body = isEditing ? editedBody : (content.body ?? "");
+
+    const wordCount = countWords(body);
+    const hasSeo = !!content.seo;
+    const reviewItems = parseReview(content.seo?.review);
+    const hasNotion = !!content.notion;
+
+    const handleEdit = () => {
+        setEditedTitle(content.title);
+        setEditedBody(content.body ?? "");
+        setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        setEditedTitle(content.title);
+        setEditedBody(content.body ?? "");
+    };
+
+    const handleSave = async () => {
+        if (isOverLimit) {
+            await Toast.fire({icon: "error", title: `Le contenu dépasse la limite de ${currentPlatform.maxLength.toLocaleString("fr-FR")} caractères pour ${currentPlatform.label}`});
+            return;
+        }
+
+        try {
+            setSaving(true);
+
+            const res = await fetch(`${API_URL}/content/${content.id}`, {
+                method: "PATCH",
+                headers: {"Content-Type": "application/json"},
+                credentials: "include",
+                body: JSON.stringify({
+                    title: editedTitle,
+                    body: editedBody,
+                }),
+            });
+
+            if (!res.ok) {
+                throw new Error();
+            }
+
+            setContent({...content, title: editedTitle, body: editedBody});
+            setIsEditing(false);
+            await Toast.fire({icon: "success", title: "Post mis à jour avec succès"});
+            router.refresh();
+        } catch {
+            await Toast.fire({icon: "error", title: "Une erreur est survenue, veuillez réessayer"});
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        const result = await Swal.fire({
+            title: "Supprimer ce post ?",
+            text: "Cette action est irréversible.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Supprimer",
+            cancelButtonText: "Annuler",
+            confirmButtonColor: "#DC2626",
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            setDeleting(true);
+
+            const res = await fetch(`${API_URL}/content/${content.id}`, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            if (!res.ok) {
+                throw new Error();
+            }
+
+            await Toast.fire({icon: "success", title: "Post supprimé avec succès"});
+            router.push("/content/posts");
+        } catch {
+            await Toast.fire({icon: "error", title: "Une erreur est survenue, veuillez réessayer"});
+            setDeleting(false);
+        }
+    };
+
+    const handleNotionAction = async () => {
+        // TODO: Endpoint Notion (envoi / synchro)
+    };
+
+    const handleCalculateSeo = async () => {
+        // TODO: Endpoint de calcul SEO
+    };
+
     return (
         <div className="flex flex-col gap-4 h-full">
             <div className="flex items-baseline gap-2 flex-wrap">
@@ -51,26 +194,150 @@ export default function PostDetailPage() {
                     Mes posts
                 </Link>
                 <span className="text-2xl text-base-content/30">›</span>
-                <h1 className="text-2xl font-display text-base-content/60">
-                    {CONTENT.title}
-                </h1>
+                {isEditing ? (
+                    <input
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        className="input input-bordered input-sm text-base font-display w-4/6"
+                    />
+                ) : (
+                    <h1 className="text-2xl font-display text-base-content/60 break-words">
+                        {content.title}
+                    </h1>
+                )}
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+                {isEditing ? (
+                    <>
+                        <button
+                            onClick={handleCancel}
+                            disabled={saving}
+                            className="btn btn-sm btn-ghost gap-2 rounded-lg"
+                        >
+                            <X size={14}/>
+                            Annuler
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving || isOverLimit}
+                            className="btn btn-sm btn-accent gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {saving ? <span className="loading loading-spinner loading-xs"/> : <Save size={14}/>}
+                            {saving ? "Enregistrement..." : "Enregistrer"}
+                        </button>
+                        {isEditing && isOverLimit && (
+                            <p className="text-xs text-error">
+                                Le contenu dépasse la limite de {currentPlatform.maxLength.toLocaleString("fr-FR")} caractères pour {currentPlatform.label}.
+                            </p>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <button
+                            onClick={handleEdit}
+                            className="btn btn-sm btn-accent gap-2 rounded-lg"
+                        >
+                            <Pencil size={14}/>
+                            Modifier
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            disabled={deleting}
+                            className="btn btn-sm btn-outline btn-error gap-2 rounded-lg"
+                        >
+                            {deleting ? <span className="loading loading-spinner loading-xs"/> : <Trash2 size={14}/>}
+                            {deleting ? "Suppression..." : "Supprimer"}
+                        </button>
+                        <button
+                            onClick={handleCalculateSeo}
+                            disabled={calculatingSeo}
+                            className="btn btn-sm btn-outline gap-2 rounded-lg"
+                        >
+                            {calculatingSeo ? <span className="loading loading-spinner loading-xs"/> : <Sparkles size={14}/>}
+                            {calculatingSeo ? "Calcul en cours..." : "Calcul SEO"}
+                        </button>
+                        <button
+                            onClick={handleNotionAction}
+                            disabled={syncing}
+                            className="btn btn-sm btn-outline gap-2 rounded-lg"
+                        >
+                            {syncing ? (
+                                <span className="loading loading-spinner loading-xs"/>
+                            ) : hasNotion ? (
+                                <RefreshCw size={14}/>
+                            ) : (
+                                <Send size={14}/>
+                            )}
+                            {syncing
+                                ? "Synchronisation..."
+                                : hasNotion
+                                    ? "Synchroniser avec Notion"
+                                    : "Envoyer vers Notion"}
+                        </button>
+                    </>
+                )}
+
+                <span className={`badge gap-1.5 text-xs font-medium ${currentPlatform.bg} ${currentPlatform.color} border-none`}>
+                    {currentPlatform.icon}
+                    {currentPlatform.label}
+                </span>
+                <span className={`badge text-xs font-medium border-none ${
+                    content.status === ContentStatus.PUBLISHED
+                        ? "bg-success/10 text-success"
+                        : content.status === ContentStatus.WAITING_PUBLISH
+                            ? "bg-warning/10 text-warning"
+                            : "bg-base-200 text-base-content/60"
+                }`}>
+                    {StatusLabels[content.status]}
+                </span>
             </div>
 
             <div className="flex gap-5 flex-1 min-h-0">
                 <div className="flex-1 card bg-base-100 border border-base-300 shadow-xs overflow-hidden flex flex-col">
-                    <div className="card-body p-6 overflow-y-auto flex-1">
-                        <h2 className="text-base font-bold mb-4">{CONTENT.title}</h2>
-                        <ContentRenderer text={CONTENT.body ?? ''}/>
-                    </div>
+                    {isEditing ? (
+                        <div className="flex-1 flex flex-col p-4 overflow-hidden">
+                            <TextEditor
+                                content={editedBody}
+                                onChange={setEditedBody}
+                                maxChars={currentPlatform.maxLength}
+                                onCharsChange={setCharCount}
+                                placeholder="Modifiez votre contenu..."
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="card-body p-6 overflow-y-auto flex-1">
+                                <h2 className="text-base font-bold mb-4">{content.title}</h2>
+                                <div
+                                    className={[
+                                        "prose prose-sm max-w-none text-base-content",
+                                        "[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:leading-tight",
+                                        "[&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-2 [&_h2]:mt-3 [&_h2]:leading-tight",
+                                        "[&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-1.5 [&_h3]:mt-3 [&_h3]:leading-snug",
+                                        "[&_strong]:font-bold [&_em]:italic",
+                                        "[&_p]:mb-2 [&_p]:leading-relaxed",
+                                        "[&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2",
+                                        "[&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2",
+                                        "[&_li]:mb-0.5 [&_li]:leading-relaxed",
+                                        "[&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-base-content/60 [&_blockquote]:my-2",
+                                        "[&_code]:bg-base-200 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono",
+                                        "[&_a]:underline [&_a]:text-primary",
+                                    ].join(" ")}
+                                    dangerouslySetInnerHTML={{__html: body}}
+                                />
+                            </div>
 
-                    <div className="flex items-center justify-between px-6 py-2.5 bg-base-content text-base-100 text-xs font-medium shrink-0">
-                        <span>{countWords(CONTENT.body ?? '')} MOTS</span>
-                        <span>Temps de lecture : {Math.ceil(countWords(CONTENT.body ?? '') / 200)} min</span>
-                        <span className="flex items-center gap-1.5">
-                            <RefreshCw size={11}/>
-                            {CONTENT.notion?.notionSyncStatus}
-                        </span>
-                    </div>
+                            <div className="flex items-center justify-between px-6 py-2.5 bg-base-content text-base-100 text-xs font-medium shrink-0">
+                                <span>{wordCount} MOTS</span>
+                                <span>Temps de lecture : {Math.ceil(wordCount / 200)} min</span>
+                                <span className="flex items-center gap-1.5">
+                                    <RefreshCw size={11}/>
+                                    {content.notion?.notionSyncStatus ?? "Non lié à Notion"}
+                                </span>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <div className="w-72 shrink-0 flex flex-col gap-4">
@@ -81,48 +348,64 @@ export default function PostDetailPage() {
                                 <h3 className="font-bold text-base">Analyse SEO</h3>
                             </div>
 
-                            <div className="flex justify-center">
-                                <SeoScoreGauge score={CONTENT.seo?.score ?? 0}/>
-                            </div>
+                            {hasSeo ? (
+                                <>
+                                    <div className="flex justify-center">
+                                        <SeoScoreGauge score={content.seo?.score ?? 0}/>
+                                    </div>
 
-                            <div className="flex flex-col gap-3">
-                                <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">
-                                    Optimisation
-                                </p>
-                                {CONTENT.seo && CONTENT.seo.review && parseReview(CONTENT.seo.review).map((opt) => (
-                                    <div key={opt.title} className="flex items-start gap-2.5">
-                                        {opt.ok ? (
-                                            <CheckCircle2 size={16} className="text-success shrink-0 mt-0.5"/>
+                                    <div className="flex flex-col gap-3">
+                                        <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">
+                                            Optimisation
+                                        </p>
+                                        {content.seo?.review ? (
+                                            <p className="text-xs text-base-content/60 leading-relaxed">
+                                                {content.seo.review}
+                                            </p>
                                         ) : (
-                                            <XCircle size={16} className="text-error shrink-0 mt-0.5"/>
+                                            <p className="text-xs text-base-content/40">
+                                                Aucune analyse détaillée disponible.
+                                            </p>
                                         )}
-                                        <div>
-                                            <p className="text-sm font-medium leading-tight">{opt.title}</p>
-                                            <p className="text-xs text-base-content/40">{opt.detail}</p>
+                                    </div>
+
+                                    <div className="divider my-0"/>
+
+                                    <div className="flex flex-col gap-2">
+                                        <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">
+                                            Nuage de mots clés
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {content.seo?.keywords && content.seo.keywords.length > 0 ? (
+                                                content.seo.keywords.split(",").map((word) => word.trim()).filter(Boolean).map((word) => (
+                                                    <span key={word} className="badge badge-ghost text-xs">
+                                                        {word}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <p className="text-xs text-base-content/40">
+                                                    Aucun mot clé disponible.
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-
-                            <div className="divider my-0"/>
-
-                            <div className="flex flex-col gap-2">
-                                <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">
-                                    Nuage de mots clés
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {CONTENT.seo && CONTENT.seo.keywords && CONTENT.seo.keywords.map((word) => (
-                                        <span key={word} className="badge badge-ghost text-xs">
-                                            {word}
-                                        </span>
-                                    ))}
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center gap-3 py-6 text-center">
+                                    <div className="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center">
+                                        <RefreshCw size={16} className="text-base-content/30"/>
+                                    </div>
+                                    <p className="text-sm font-medium text-base-content/60">
+                                        Analyse SEO en attente
+                                    </p>
+                                    <p className="text-xs text-base-content/40">
+                                        Le score SEO n&apos;a pas encore été calculé pour ce contenu.
+                                    </p>
                                 </div>
-                            </div>
-
+                            )}
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );

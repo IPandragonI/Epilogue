@@ -50,7 +50,10 @@ export class ContentService {
   }
 
   findOne(id: string) {
-    return this.contentRepository.findOne({ where: { id } });
+    return this.contentRepository.findOne({
+      where: { id },
+      relations: ['seo', 'notion'],
+    });
   }
 
   async getStats() {
