@@ -5,6 +5,7 @@ import {
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AIService } from './ai.service';
 import { GenerateTextDto } from './dto/generate-text.dto';
@@ -19,6 +20,12 @@ import {
 } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { SubscriptionGuard } from '../../auth/guards/subscription.guard';
+import { UsageTrackingInterceptor } from '../../auth/interceptors/usage-tracking.interceptor';
+import {
+  SubscriptionFeature,
+  SubscriptionFeatureEnum,
+} from '../../auth/decorators/subscription.decorator';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -152,7 +159,9 @@ export class AIController {
   }
 
   @Post('generate-post')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @UseInterceptors(UsageTrackingInterceptor)
+  @SubscriptionFeature(SubscriptionFeatureEnum.TOKEN)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Génère un post IA pour un réseau social',

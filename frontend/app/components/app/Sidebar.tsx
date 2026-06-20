@@ -12,6 +12,7 @@ import {
     HelpCircle,
     Settings,
     ChevronDown,
+    CreditCard,
 } from "lucide-react";
 
 type NavChild = { label: string; href: string };
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const BOTTOM_ITEMS = [
+    {label: "Abonnement", href: "/pricing", icon: <CreditCard size={18}/>,},
     {label: "Support", href: "/support", icon: <HelpCircle size={18}/>},
     {label: "Paramètres", href: "/parameters", icon: <Settings size={18}/>},
 ];

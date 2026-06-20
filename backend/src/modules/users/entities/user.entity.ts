@@ -45,4 +45,16 @@ export class User {
 
   @OneToMany(() => Content, (content: any) => content.user)
   contents: Content[];
+
+  @Column({ type: 'int', default: 0 })
+  nbTokenUsedThisMonth!: number;
+
+  @Column({ type: 'int', default: 0 })
+  nbCurationUsedThisMonth!: number;
+
+  @Column({ type: 'int', default: 0 })
+  nbIdeaGenerationUsedThisMonth!: number;
+
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  usageMonth!: string | null;
 }

@@ -12,18 +12,20 @@ import { ContentSeo } from '../modules/content-seo/entities/content-seo.entity';
 import { ContentIdea } from '../modules/content-idea/entities/content-idea.entity';
 import { CurationSource } from '../modules/curation-source/entities/curation-source.entity';
 import { CurationItem } from '../modules/curation-item/entities/curation-item.entity';
+import { SubscriptionPlan } from '../modules/subscription-plan/entities/subscription-plan.entity';
 
 import { agencyData } from './data/agency.data';
 import { topicData } from './data/topic.data';
 import { userData } from './data/user.data';
 import { contentData } from './data/content.data';
 import { curationData } from './data/curation.data';
+import { subscriptionPlanData } from './data/subscription-plan.data';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const dataSource = app.get(DataSource);
 
-  console.log('\n=== 🌱 Starting Modular Seeding ===\n');
+  console.log('\n=== 🌱 Starting Seeding ===\n');
 
   try {
     console.log('🗑️  Cleaning Database');
@@ -46,6 +48,24 @@ async function seed() {
     const agencyRepo = dataSource.getRepository(Agency);
     const agencies = await agencyRepo.save(agencyRepo.create(agencyData()));
     console.log('✅ Agencies seeded');
+
+    const subscriptionPlanRepo = dataSource.getRepository(SubscriptionPlan);
+    const plans = await subscriptionPlanRepo.save(
+      subscriptionPlanRepo.create(subscriptionPlanData()),
+    );
+    console.log('✅ Subscription Plans seeded');
+
+    const agencySubscriptionRepo = dataSource.getRepository('AgencySubscription');
+    await agencySubscriptionRepo.save(
+      agencies.map((agency) => ({
+        agencyId: agency.id,
+        subscriptionPlanId: plans[0].id,
+        isActive: true,
+        startDate: new Date(),
+        endDate: null,
+      })),
+    );
+    console.log('✅ Agency Subscriptions seeded');
 
     const userRepo = dataSource.getRepository(User);
     const pw = await bcrypt.hash('password', 10);

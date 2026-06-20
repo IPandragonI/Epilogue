@@ -6,16 +6,28 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CurationItemService } from './curation-item.service';
 import { CreateCurationItemDto } from './dto/create-curation-item.dto';
 import { UpdateCurationItemDto } from './dto/update-curation-item.dto';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { SubscriptionGuard } from '../../auth/guards/subscription.guard';
+import { UsageTrackingInterceptor } from '../../auth/interceptors/usage-tracking.interceptor';
+import {
+  SubscriptionFeature,
+  SubscriptionFeatureEnum,
+} from '../../auth/decorators/subscription.decorator';
 
 @Controller('curation-item')
 export class CurationItemController {
   constructor(private readonly curationItemService: CurationItemService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @UseInterceptors(UsageTrackingInterceptor)
+  @SubscriptionFeature(SubscriptionFeatureEnum.CURATION)
   create(@Body() createCurationItemDto: CreateCurationItemDto) {
     return this.curationItemService.create(createCurationItemDto);
   }

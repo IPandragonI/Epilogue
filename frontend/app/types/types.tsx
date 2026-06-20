@@ -158,3 +158,31 @@ export interface CreateCurationItemDto {
         sourceType: string;
     };
 }
+
+export type BillingCycle = 'MONTHLY' | 'YEARLY';
+
+export interface SubscriptionPlan {
+    id: string;
+    name: string;
+    internalName: string;
+    description: string;
+    price: number;
+    billingCycle: BillingCycle;
+    maxTokenPerMonth: number;
+    maxCurationPerMonth: number;
+    maxIdeaGenerationPerMonth: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AgencySubscription {
+    id: string;
+    agencyId: string;
+    subscriptionPlanId: string;
+    subscriptionPlan: SubscriptionPlan;
+    isActive: boolean;
+    startDate: string;
+    endDate: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
