@@ -18,6 +18,7 @@ import { ContentNotionModule } from './modules/content-notion/content-notion.mod
 import { ContentSeoModule } from './modules/content-seo/content-seo.module';
 import { SubscriptionPlanModule } from './modules/subscription-plan/subscription-plan.module';
 import { AgencySubscriptionModule } from './modules/agency-subscription/agency-subscription.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AgencySubscriptionModule } from './modules/agency-subscription/agency-s
     ContentSeoModule,
     SubscriptionPlanModule,
     AgencySubscriptionModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
-import { AgencySubscription, BillingCycle, SubscriptionPlan } from "../../types/types";
+import {useEffect, useState} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
+import {useAuth} from "../../hooks/useAuth";
+import {AgencySubscription, BillingCycle, SubscriptionPlan} from "../../types/types";
 import {
     Check,
     Sparkles,
@@ -14,8 +15,6 @@ import {
 import Swal from "sweetalert2";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatLimit(value: number): string {
     if (value >= 999_999) return "Illimité";
@@ -31,27 +30,25 @@ function getPlanTier(internalName: string): string {
 }
 
 const TIER_META: Record<string, { icon: React.ReactNode; badge?: string; highlight: boolean }> = {
-    FREE: { icon: <Gift size={22} />, highlight: false },
-    STARTER: { icon: <Zap size={22} />, highlight: false },
-    PRO: { icon: <Sparkles size={22} />, badge: "Recommandé", highlight: true },
-    ENTERPRISE: { icon: <Building2 size={22} />, highlight: false },
+    FREE: {icon: <Gift size={22}/>, highlight: false},
+    STARTER: {icon: <Zap size={22}/>, highlight: false},
+    PRO: {icon: <Sparkles size={22}/>, badge: "Recommandé", highlight: true},
+    ENTERPRISE: {icon: <Building2 size={22}/>, highlight: false},
 };
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
-function PlanFeatures({ plan }: { plan: SubscriptionPlan }) {
+function PlanFeatures({plan}: { plan: SubscriptionPlan }) {
     const features = [
-        { label: "Tokens IA / mois", value: formatLimit(plan.maxTokenPerMonth) },
-        { label: "Curations / mois", value: formatLimit(plan.maxCurationPerMonth) },
-        { label: "Idées générées / mois", value: formatLimit(plan.maxIdeaGenerationPerMonth) },
+        {label: "Tokens IA / mois", value: formatLimit(plan.maxTokenPerMonth)},
+        {label: "Curations / mois", value: formatLimit(plan.maxCurationPerMonth)},
+        {label: "Idées générées / mois", value: formatLimit(plan.maxIdeaGenerationPerMonth)},
     ];
 
     return (
         <ul className="flex flex-col gap-2.5 mt-6">
-            {features.map(({ label, value }) => (
+            {features.map(({label, value}) => (
                 <li key={label} className="flex items-center gap-2.5 text-sm">
                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-accent/15 flex items-center justify-center">
-                        <Check size={11} className="text-accent" strokeWidth={3} />
+                        <Check size={11} className="text-accent" strokeWidth={3}/>
                     </span>
                     <span className="text-base-content/70">
                         <span className="font-semibold text-base-content">{value}</span> {label}
@@ -63,12 +60,12 @@ function PlanFeatures({ plan }: { plan: SubscriptionPlan }) {
 }
 
 function PlanCard({
-    plan,
-    isCurrent,
-    isAdmin,
-    onSelect,
-    loading,
-}: {
+                      plan,
+                      isCurrent,
+                      isAdmin,
+                      onSelect,
+                      loading,
+                  }: {
     plan: SubscriptionPlan;
     isCurrent: boolean;
     isAdmin: boolean;
@@ -83,15 +80,15 @@ function PlanCard({
         <div
             className={`relative flex flex-col rounded-2xl border p-6 transition-shadow
                 ${meta.highlight
-                    ? "border-accent shadow-lg shadow-accent/10 bg-base-100"
-                    : "border-base-300 bg-base-100 hover:shadow-md"
-                }
+                ? "border-accent shadow-lg shadow-accent/10 bg-base-100"
+                : "border-base-300 bg-base-100 hover:shadow-md"
+            }
                 ${isCurrent ? "ring-2 ring-primary" : ""}
             `}
         >
-            {/* Badges */}
             <div className="flex items-start justify-between gap-2 mb-1">
-                <span className={`p-2 rounded-xl ${meta.highlight ? "bg-accent/10 text-accent" : "bg-base-200 text-base-content/60"}`}>
+                <span
+                    className={`p-2 rounded-xl ${meta.highlight ? "bg-accent/10 text-accent" : "bg-base-200 text-base-content/60"}`}>
                     {meta.icon}
                 </span>
                 <div className="flex flex-col items-end gap-1">
@@ -108,13 +105,11 @@ function PlanCard({
                 </div>
             </div>
 
-            {/* Name & description */}
             <h3 className="font-bold text-lg mt-3 text-base-content">{plan.name}</h3>
             <p className="text-sm text-base-content/55 mt-1 leading-relaxed min-h-[40px]">
                 {plan.description}
             </p>
 
-            {/* Price */}
             <div className="mt-5 flex items-end gap-1">
                 {isFree ? (
                     <span className="text-3xl font-extrabold text-base-content">Gratuit</span>
@@ -130,10 +125,8 @@ function PlanCard({
                 )}
             </div>
 
-            {/* Features */}
-            <PlanFeatures plan={plan} />
+            <PlanFeatures plan={plan}/>
 
-            {/* CTA */}
             <div className="mt-auto pt-6">
                 {isCurrent ? (
                     <button
@@ -150,7 +143,7 @@ function PlanCard({
                             ${meta.highlight ? "bg-accent hover:bg-accent/85" : "bg-primary hover:bg-primary/85"}
                         `}
                     >
-                        {loading ? <Loader2 size={14} className="animate-spin" /> : "Choisir ce plan"}
+                        {loading ? <Loader2 size={14} className="animate-spin"/> : "Choisir ce plan"}
                     </button>
                 ) : (
                     <button
@@ -167,32 +160,34 @@ function PlanCard({
 }
 
 function BillingToggle({
-    value,
-    onChange,
-}: {
+                           value,
+                           onChange,
+                       }: {
     value: BillingCycle;
     onChange: (v: BillingCycle) => void;
 }) {
     return (
         <div className="flex items-center gap-3">
-            <span className={`text-sm font-medium ${value === "MONTHLY" ? "text-base-content" : "text-base-content/40"}`}>
+            <span
+                className={`text-sm font-medium ${value === "MONTHLY" ? "text-base-content" : "text-base-content/40"}`}>
                 Mensuel
             </span>
             <input
                 type="checkbox"
                 className="toggle toggle-sm"
-                style={{ "--tglbg": "var(--color-accent)" } as React.CSSProperties}
+                style={{"--tglbg": "var(--color-accent)"} as React.CSSProperties}
                 checked={value === "YEARLY"}
                 onChange={(e) => onChange(e.target.checked ? "YEARLY" : "MONTHLY")}
             />
-            <span className={`text-sm font-medium ${value === "YEARLY" ? "text-base-content" : "text-base-content/40"}`}>
+            <span
+                className={`text-sm font-medium ${value === "YEARLY" ? "text-base-content" : "text-base-content/40"}`}>
                 Annuel
             </span>
         </div>
     );
 }
 
-function UsageBar({ label, used, max }: { label: string; used: number; max: number }) {
+function UsageBar({label, used, max}: { label: string; used: number; max: number }) {
     const pct = max >= 999_999 ? 0 : Math.min((used / max) * 100, 100);
     const color = pct > 80 ? "bg-error" : pct > 50 ? "bg-warning" : "bg-accent";
 
@@ -203,16 +198,16 @@ function UsageBar({ label, used, max }: { label: string; used: number; max: numb
                 <span>{max >= 999_999 ? "Illimité" : `${used} / ${formatLimit(max)}`}</span>
             </div>
             <div className="h-1.5 w-full bg-base-300 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+                <div className={`h-full rounded-full transition-all ${color}`} style={{width: `${pct}%`}}/>
             </div>
         </div>
     );
 }
 
-// ─── Page ───────────────────────────────────────────────────────────────────
-
 export default function PricingPage() {
-    const { user, loading: authLoading } = useAuth();
+    const {user, loading: authLoading} = useAuth();
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [subscription, setSubscription] = useState<AgencySubscription | null>(null);
@@ -222,6 +217,17 @@ export default function PricingPage() {
 
     const isAdmin = user?.role === "admin";
     const agencyId = user?.agency?.id;
+
+    useEffect(() => {
+        if (searchParams.get("canceled") === "true") {
+            Swal.fire({
+                title: "Paiement annulé",
+                text: "Vous n'avez pas été débité. Vous pouvez choisir un plan à tout moment.",
+                icon: "info",
+                confirmButtonColor: "#547573",
+            });
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         fetch(`${API}/subscription-plans`)
@@ -250,12 +256,16 @@ export default function PricingPage() {
     async function handleSelectPlan(plan: SubscriptionPlan) {
         if (!agencyId) return;
 
+        const isFree = Number(plan.price) === 0;
+
         const result = await Swal.fire({
-            title: "Changer de plan ?",
-            html: `Vous allez passer au plan <strong>${plan.name}</strong>.<br/>Le changement est effectif immédiatement.`,
+            title: isFree ? "Passer au plan gratuit ?" : "Procéder au paiement ?",
+            html: isFree
+                ? `Vous allez passer au plan <strong>${plan.name}</strong>.`
+                : `Vous allez être redirigé vers Stripe pour payer le plan <strong>${plan.name}</strong> (${plan.price}€).`,
             icon: "question",
             showCancelButton: true,
-            confirmButtonText: "Confirmer",
+            confirmButtonText: isFree ? "Confirmer" : "Payer avec Stripe",
             cancelButtonText: "Annuler",
             confirmButtonColor: "#547573",
         });
@@ -264,33 +274,35 @@ export default function PricingPage() {
 
         setChangingPlan(true);
         try {
-            const res = await fetch(
-                `${API}/agency-subscriptions/agency/${agencyId}/change-plan`,
-                {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ subscriptionPlanId: plan.id }),
-                },
-            );
+            const res = await fetch(`${API}/payments/checkout`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                credentials: "include",
+                body: JSON.stringify({planId: plan.id, agencyId}),
+            });
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.message ?? "Erreur lors du changement de plan");
+                throw new Error((err as { message?: string }).message ?? "Erreur lors de la création de la session");
             }
 
-            const updated: AgencySubscription = await res.json();
-            setSubscription(updated);
+            const {url, free} = await res.json() as { url: string | null; free: boolean };
 
-            await Swal.fire({
-                title: "Plan mis à jour !",
-                text: `Vous êtes maintenant sur le plan ${plan.name}.`,
-                icon: "success",
-                confirmButtonColor: "#547573",
-            });
+            if (free) {
+                setSubscription(null);
+                await Swal.fire({
+                    title: "Plan activé !",
+                    text: `Vous êtes maintenant sur le plan ${plan.name}.`,
+                    icon: "success",
+                    confirmButtonColor: "#547573",
+                });
+                router.refresh();
+            } else if (url) {
+                window.location.href = url;
+            }
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Une erreur est survenue";
-            await Swal.fire({ title: "Erreur", text: message, icon: "error", confirmButtonColor: "#547573" });
+            await Swal.fire({title: "Erreur", text: message, icon: "error", confirmButtonColor: "#547573"});
         } finally {
             setChangingPlan(false);
         }
@@ -299,7 +311,7 @@ export default function PricingPage() {
     if (authLoading || loadingPlans) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 size={28} className="animate-spin text-accent" />
+                <Loader2 size={28} className="animate-spin text-accent"/>
             </div>
         );
     }
@@ -309,7 +321,6 @@ export default function PricingPage() {
     return (
         <div className="max-w-5xl mx-auto px-4 py-10 flex flex-col gap-10">
 
-            {/* Header */}
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold text-base-content">Abonnement</h1>
                 <p className="text-sm text-base-content/55">
@@ -317,7 +328,6 @@ export default function PricingPage() {
                 </p>
             </div>
 
-            {/* Current usage */}
             {activePlan && (
                 <div className="rounded-2xl border border-base-300 bg-base-100 p-6 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
@@ -332,9 +342,9 @@ export default function PricingPage() {
                         </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-base-200">
-                        <UsageBar label="Tokens IA" used={0} max={activePlan.maxTokenPerMonth} />
-                        <UsageBar label="Curations" used={0} max={activePlan.maxCurationPerMonth} />
-                        <UsageBar label="Générations d'idées" used={0} max={activePlan.maxIdeaGenerationPerMonth} />
+                        <UsageBar label="Tokens IA" used={0} max={activePlan.maxTokenPerMonth}/>
+                        <UsageBar label="Curations" used={0} max={activePlan.maxCurationPerMonth}/>
+                        <UsageBar label="Générations d'idées" used={0} max={activePlan.maxIdeaGenerationPerMonth}/>
                     </div>
                     <p className="text-xs text-base-content/40">
                         Les compteurs se réinitialisent automatiquement chaque mois.
@@ -342,15 +352,13 @@ export default function PricingPage() {
                 </div>
             )}
 
-            {/* Toggle */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <p className="text-sm font-medium text-base-content/70">
                     {visiblePlans.length} plan{visiblePlans.length > 1 ? "s" : ""} disponible{visiblePlans.length > 1 ? "s" : ""}
                 </p>
-                <BillingToggle value={billingCycle} onChange={setBillingCycle} />
+                <BillingToggle value={billingCycle} onChange={setBillingCycle}/>
             </div>
 
-            {/* Plan grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {visiblePlans.map((plan) => (
                     <PlanCard

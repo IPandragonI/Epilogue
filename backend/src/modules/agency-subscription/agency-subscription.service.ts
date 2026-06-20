@@ -26,6 +26,10 @@ export class AgencySubscriptionService {
   }
 
   async subscribe(dto: CreateAgencySubscriptionDto): Promise<AgencySubscription> {
+    return this.subscribeWithSession({ ...dto, stripeSessionId: null });
+  }
+
+  async subscribeWithSession(dto: CreateAgencySubscriptionDto & { stripeSessionId: string | null }): Promise<AgencySubscription> {
     await this.subscriptionRepository.update(
       { agencyId: dto.agencyId, isActive: true },
       { isActive: false, endDate: new Date() },
@@ -34,12 +38,17 @@ export class AgencySubscriptionService {
     const subscription = this.subscriptionRepository.create({
       agencyId: dto.agencyId,
       subscriptionPlanId: dto.subscriptionPlanId,
+      stripeSessionId: dto.stripeSessionId,
       isActive: true,
       startDate: new Date(),
       endDate: null,
     });
 
-    return this.subscriptionRepository.save(subscription);
+    const saved = await this.subscriptionRepository.save(subscription);
+    return this.subscriptionRepository.findOneOrFail({
+      where: { id: saved.id },
+      relations: ['subscriptionPlan'],
+    });
   }
 
   changePlan(agencyId: string, subscriptionPlanId: string): Promise<AgencySubscription> {

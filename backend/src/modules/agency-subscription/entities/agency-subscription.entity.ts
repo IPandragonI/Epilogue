@@ -32,6 +32,9 @@ export class AgencySubscription {
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  stripeSessionId!: string | null;
+
   @Column({ type: 'timestamp' })
   startDate!: Date;
 

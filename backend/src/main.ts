@@ -44,7 +44,7 @@ async function bootstrap() {
   );
 
   await app.register(multipart, {
-    limits: { fileSize: 20 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 20 * 1024 * 1024 },
   });
 
   await app.register(cookie, {
