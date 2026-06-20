@@ -3,13 +3,139 @@
 import Link from "next/link";
 import {useEffect, useState} from "react";
 import {useRouter, useParams, notFound} from "next/navigation";
-import {CheckCircle2, XCircle, RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2} from "lucide-react";
+import {RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2, Download, Copy, Check, FileText, FileCode, ChevronDown} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
 import TextEditor from "@/app/components/content/writing/TextEditor";
 import {Content, PlatformConfig, Platform, StatusLabels, ContentStatus} from "@/app/types/types";
 import Swal from "sweetalert2";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+function htmlToPlainText(html: string): string {
+    return html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>/gi, "\n\n")
+        .replace(/<\/h[1-6]>/gi, "\n\n")
+        .replace(/<\/li>/gi, "\n")
+        .replace(/<\/blockquote>/gi, "\n\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+function htmlToMarkdown(html: string): string {
+    return html
+        .replace(/<h1[^>]*>(.*?)<\/h1>/gi, (_, t) => `# ${t}\n\n`)
+        .replace(/<h2[^>]*>(.*?)<\/h2>/gi, (_, t) => `## ${t}\n\n`)
+        .replace(/<h3[^>]*>(.*?)<\/h3>/gi, (_, t) => `### ${t}\n\n`)
+        .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, t) =>
+            t.split("\n").map((l: string) => `> ${l}`).join("\n") + "\n\n"
+        )
+        .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_, t) => `\`\`\`\n${t}\n\`\`\`\n\n`)
+        .replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, t) =>
+            t.replace(/<li[^>]*>(.*?)<\/li>/gi, (_: string, i: string) => `- ${i}\n`) + "\n"
+        )
+        .replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, t) => {
+            let idx = 1;
+            return t.replace(/<li[^>]*>(.*?)<\/li>/gi, (_: string, i: string) => `${idx++}. ${i}\n`) + "\n";
+        })
+        .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_, t) => `${t}\n\n`)
+
+        .replace(/<strong[^>]*>(.*?)<\/strong>/gi, (_, t) => `**${t}**`)
+        .replace(/<b[^>]*>(.*?)<\/b>/gi, (_, t) => `**${t}**`)
+        .replace(/<em[^>]*>(.*?)<\/em>/gi, (_, t) => `*${t}*`)
+        .replace(/<i[^>]*>(.*?)<\/i>/gi, (_, t) => `*${t}*`)
+        .replace(/<s[^>]*>(.*?)<\/s>/gi, (_, t) => `~~${t}~~`)
+        .replace(/<code[^>]*>(.*?)<\/code>/gi, (_, t) => `\`${t}\``)
+        .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, (_, href, t) => `[${t}](${href})`)
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<hr\s*\/?>/gi, "\n---\n\n")
+
+        .replace(/<[^>]+>/g, "")
+
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+function downloadFile(content: string, filename: string, mime: string) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function slugify(text: string): string {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 60);
+}
+
+function ExportMenu({ title, body }: { title: string; body: string }) {
+    const [copied, setCopied] = useState(false);
+
+    const plain = htmlToPlainText(body);
+    const markdown = `# ${title}\n\n${htmlToMarkdown(body)}`;
+    const filename = slugify(title) || "post";
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(`${title}\n\n${plain}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="dropdown dropdown-end">
+            <button tabIndex={0} className="btn btn-sm btn-outline gap-2 rounded-lg">
+                <Download size={14} />
+                Exporter
+                <ChevronDown size={12} />
+            </button>
+            <ul tabIndex={0} className="dropdown-content menu bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 w-52 p-1.5 mt-1 gap-0.5">
+                <li>
+                    <button onClick={handleCopy} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-base-200 transition-colors w-full text-left">
+                        {copied ? <Check size={14} className="text-success" /> : <Copy size={14} className="text-base-content/50" />}
+                        <span>{copied ? "Copié !" : "Copier le texte"}</span>
+                    </button>
+                </li>
+                <li>
+                    <button
+                        onClick={() => downloadFile(`${title}\n\n${plain}`, `${filename}.txt`, "text/plain;charset=utf-8")}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-base-200 transition-colors w-full text-left"
+                    >
+                        <FileText size={14} className="text-base-content/50" />
+                        <span>Télécharger .txt</span>
+                    </button>
+                </li>
+                <li>
+                    <button
+                        onClick={() => downloadFile(markdown, `${filename}.md`, "text/markdown;charset=utf-8")}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-base-200 transition-colors w-full text-left"
+                    >
+                        <FileCode size={14} className="text-base-content/50" />
+                        <span>Télécharger .md</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    );
+}
 
 function parseReview(review?: string) {
     if (!review) return [];
@@ -275,6 +401,7 @@ export default function PostDetailPage() {
                                     ? "Synchroniser avec Notion"
                                     : "Envoyer vers Notion"}
                         </button>
+                        <ExportMenu title={content.title} body={content.body ?? ""} />
                     </>
                 )}
 

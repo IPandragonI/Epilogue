@@ -76,7 +76,7 @@ export interface Content {
 export interface ContentSeo {
     score: number;
     review?: string;
-    keywords?: string[];
+    keywords?: string;
 }
 
 export interface ContentNotion {
