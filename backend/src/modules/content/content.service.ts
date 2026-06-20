@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { Content } from './entities/content.entity';
+import { ContentStatusEnum } from './entities/contentStatus.enum';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
@@ -57,25 +58,46 @@ export class ContentService {
   }
 
   async getStats() {
-    const [totalContent, [contents, count]] = await Promise.all([
-      this.contentRepository.count(),
-      this.contentRepository.findAndCount({
-        relations: ['seo'],
-      }),
-    ]);
+    const [total, published, draft, waitingPublish, byPlatformRaw, avgSeoRaw] =
+      await Promise.all([
+        this.contentRepository.count(),
+        this.contentRepository.count({
+          where: { status: ContentStatusEnum.PUBLISHED },
+        }),
+        this.contentRepository.count({
+          where: { status: ContentStatusEnum.DRAFT },
+        }),
+        this.contentRepository.count({
+          where: { status: ContentStatusEnum.WAITING_PUBLISH },
+        }),
+        this.contentRepository
+          .createQueryBuilder('c')
+          .select('c.contentPlatform', 'platform')
+          .addSelect('COUNT(*)', 'count')
+          .groupBy('c.contentPlatform')
+          .getRawMany<{ platform: string; count: string }>(),
+        this.contentRepository
+          .createQueryBuilder('c')
+          .leftJoin('c.seo', 'seo')
+          .select('AVG(seo.score)', 'avg')
+          .getRawOne<{ avg: string | null }>(),
+      ]);
 
-    const totalSeoScore = contents.reduce((sum, content) => {
-      return sum + (content.seo ? content.seo.score : 0);
-    }, 0);
+    const byPlatform = { BLOG: 0, LINKEDIN: 0, TWITTER: 0, INSTAGRAM: 0 };
+    for (const row of byPlatformRaw) {
+      if (row.platform in byPlatform) {
+        byPlatform[row.platform as keyof typeof byPlatform] = Number(row.count);
+      }
+    }
 
-    const averageSeoScore = count > 0 ? totalSeoScore / count : 0;
-    const remainingIAToken = 0;
-
-    return [
-      { label: 'Total contenus', value: String(totalContent) },
-      { label: 'Score SEO moyen', value: averageSeoScore.toFixed(1) },
-      { label: 'Crédits IA restant', value: String(remainingIAToken) },
-    ];
+    return {
+      total,
+      published,
+      draft,
+      waitingPublish,
+      avgSeoScore: Math.round(Number(avgSeoRaw?.avg ?? 0) * 10) / 10,
+      byPlatform,
+    };
   }
 
   update(id: string, updateContentDto: UpdateContentDto) {

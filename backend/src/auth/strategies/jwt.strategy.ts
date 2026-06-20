@@ -44,6 +44,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       firstname: user.firstname,
       lastname: user.lastname,
       agency: user.agency || null,
+      nbTokenUsedThisMonth: user.nbTokenUsedThisMonth,
+      nbCurationUsedThisMonth: user.nbCurationUsedThisMonth,
+      nbIdeaGenerationUsedThisMonth: user.nbIdeaGenerationUsedThisMonth,
+      usageMonth: user.usageMonth,
     };
   }
 }

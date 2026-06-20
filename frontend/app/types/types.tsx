@@ -134,7 +134,11 @@ export interface User {
     password: string | null;
     role: UserRole;
     createdAt: string;
-    agency: Agency
+    agency: Agency;
+    nbTokenUsedThisMonth: number;
+    nbCurationUsedThisMonth: number;
+    nbIdeaGenerationUsedThisMonth: number;
+    usageMonth: string | null;
 }
 
 export interface Agency {
