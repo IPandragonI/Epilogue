@@ -75,7 +75,7 @@ export class SubscriptionGuard implements CanActivate {
     };
 
     for (const feature of features) {
-      const amount = getRequestedAmount(feature, request.body);
+      const amount = getRequestedAmount(feature, request);
       if (amount <= 0) continue;
 
       const { used, max, label } = limits[feature];

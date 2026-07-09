@@ -31,6 +31,7 @@ export interface AIProvider {
     content: string;
     tags: string[];
     references: string[];
+    tokensUsed: number;
   }>;
 
   generateSuggestedTopics(

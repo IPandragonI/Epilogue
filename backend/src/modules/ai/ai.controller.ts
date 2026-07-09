@@ -178,9 +178,13 @@ export class AIController {
   @ApiOperation({ summary: 'Génère un post IA pour un réseau social' })
   async generatePost(
     @Body() dto: GeneratePostDto,
-    @Req() req: FastifyRequest & { user: { id: string } },
+    @Req()
+    req: FastifyRequest & {
+      user: { id: string };
+      usageAmounts?: Record<string, number>;
+    },
   ) {
-    return await this.aiService.generatePost(
+    const result = await this.aiService.generatePost(
       dto.platform,
       dto.subject,
       dto.tone,
@@ -188,5 +192,10 @@ export class AIController {
       dto.curationItemIds ?? [],
       req.user.id,
     );
+
+    req.usageAmounts = { [SubscriptionFeatureEnum.TOKEN]: result.tokensUsed };
+
+    const { tokensUsed, ...response } = result;
+    return response;
   }
 }

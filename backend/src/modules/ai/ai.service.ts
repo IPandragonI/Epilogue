@@ -63,6 +63,7 @@ export class AIService {
     content: string;
     tags: string[];
     references: string[];
+    tokensUsed: number;
   }> {
     try {
       let curationContext: {

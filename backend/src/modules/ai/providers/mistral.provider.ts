@@ -200,6 +200,7 @@ export class MistralProvider implements AIProvider {
     content: string;
     tags: string[];
     references: string[];
+    tokensUsed: number;
   }> {
     const systemPrompt = this.promptService.getPrompt('generate-post');
     const lengthConfig = getLengthConfig(platform, length);
@@ -240,16 +241,16 @@ export class MistralProvider implements AIProvider {
     );
 
     const parsed = JSON.parse(response.choices[0].message.content as string);
-    const content = truncateHtmlByWords(
-      parsed.content ?? '',
-      lengthConfig.maxWords,
-    );
+    const content = truncateHtmlByWords(parsed.content ?? '', lengthConfig.maxWords);
+    const rawTokensUsed = response.usage?.total_tokens ?? 0;
+    const tokensUsed = applyUsageDiscount(rawTokensUsed);
 
     return {
       title: parsed.title ?? '',
       content,
       tags: Array.isArray(parsed.tags) ? parsed.tags : [],
       references: Array.isArray(parsed.references) ? parsed.references : [],
+      tokensUsed,
     };
   }
 
@@ -448,6 +449,12 @@ function cleanJsonResponse(content: unknown): string {
     .replace(/```json\s*/gi, '')
     .replace(/```\s*/g, '')
     .trim();
+}
+
+function applyUsageDiscount(rawTokens: number): number {
+  const rate = Number(process.env.TOKEN_USAGE_DISCOUNT_RATE ?? 1);
+  const safeRate = Number.isFinite(rate) && rate > 0 && rate <= 1 ? rate : 1;
+  return Math.max(Math.round(rawTokens * safeRate), 0);
 }
 
 function getSuggestedTopicCount(terms: string): number {

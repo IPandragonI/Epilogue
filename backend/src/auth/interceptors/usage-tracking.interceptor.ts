@@ -33,7 +33,6 @@ export class UsageTrackingInterceptor implements NestInterceptor {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const body = request.body;
 
     return next.handle().pipe(
       mergeMap(async (data: unknown) => {
@@ -44,7 +43,7 @@ export class UsageTrackingInterceptor implements NestInterceptor {
         const increments = features
           .map((feature) => ({
             feature,
-            amount: getRequestedAmount(feature, body),
+            amount: getRequestedAmount(feature, request),
           }))
           .filter(({ amount }) => amount > 0);
 
@@ -62,11 +61,18 @@ export class UsageTrackingInterceptor implements NestInterceptor {
           ),
         );
 
+        const isPlainObject =
+          typeof data === 'object' && data !== null && !Array.isArray(data);
+        if (!isPlainObject) {
+          return data;
+        }
+
         const updatedUser = await this.usersService.findOne(user.id);
 
         return {
-          ...(typeof data === 'object' && data !== null ? data : {}),
+          ...data,
           nbCurationUsedThisMonth: updatedUser.nbCurationUsedThisMonth,
+          nbTokenUsedThisMonth: updatedUser.nbTokenUsedThisMonth,
         };
       }),
     );
