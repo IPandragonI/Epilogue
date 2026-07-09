@@ -15,6 +15,9 @@ export class Agency {
   @Column({ type: 'varchar', length: 255, default: '' })
   notionParentPageId!: string;
 
+  @Column({ type: 'boolean', default: false })
+  notionAutoSync!: boolean;
+
   @OneToMany(() => User, (user) => user.agency)
   users: User[];
 }

@@ -26,6 +26,11 @@ export class ContentController {
     return this.contentService.findAllWithSEO();
   }
 
+  @Get('with-notion')
+  findAllWithNotion() {
+    return this.contentService.findAllWithNotion();
+  }
+
   @Get('with-seo-paginated')
   findAllWithSeoPaginated(
     @Query('page') page: number = 1,

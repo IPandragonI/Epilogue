@@ -26,6 +26,13 @@ export class ContentService {
     return this.contentRepository.find({ relations: ['seo'] });
   }
 
+  findAllWithNotion() {
+    return this.contentRepository.find({
+      relations: ['notion'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findAllWithSeoPaginated(
     page: number = 1,
     limit: number = 10,

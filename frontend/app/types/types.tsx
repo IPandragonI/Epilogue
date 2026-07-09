@@ -135,8 +135,9 @@ export interface User {
 export interface Agency {
     id: string;
     name: string;
-    notion_token: string;
+    notionToken?: string;
     notionParentPageId?: string;
+    notionAutoSync?: boolean;
 }
 
 export enum UserRole {
