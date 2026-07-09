@@ -3,6 +3,14 @@ import { Agency } from '../../modules/agency/entities/agency.entity';
 
 export const userData = (passwordHash: string, agency: Agency) => [
   {
+    firstname: 'Super',
+    lastname: 'Admin',
+    email: 'superadmin@example.com',
+    password: passwordHash,
+    role: UserRole.SUPER_ADMIN,
+    agency: agency,
+  },
+  {
     firstname: 'Admin',
     lastname: 'User',
     email: 'admin@example.com',

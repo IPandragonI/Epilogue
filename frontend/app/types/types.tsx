@@ -146,6 +146,7 @@ export interface Agency {
 export enum UserRole {
     ADMIN = "admin",
     PUBLIC = "public",
+    SUPER_ADMIN = "superadmin",
 }
 
 export interface CreateCurationItemDto {
