@@ -1,8 +1,9 @@
 "use client";
 
-import { Menu, Search, Bell } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
+import UserAvatar from "./UserAvatar";
 
 interface NavbarProps {
     onToggleSidebar: () => void;
@@ -20,13 +21,6 @@ export default function Navbar({ onToggleSidebar, user }: NavbarProps) {
                 <Menu size={18} />
             </button>
 
-            <div className="flex-1 max-w-sm">
-                <label className="input input-bordered input-sm flex items-center gap-2 rounded-full">
-                    <Search size={14} className="text-base-content/40 shrink-0" />
-                    <input type="text" placeholder="Search" className="grow text-sm" />
-                </label>
-            </div>
-
             <div className="flex-1" />
 
             <button className="btn btn-ghost btn-sm btn-square relative" aria-label="Notifications">
@@ -38,11 +32,12 @@ export default function Navbar({ onToggleSidebar, user }: NavbarProps) {
                     tabIndex={0}
                     className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded-lg hover:bg-base-200 transition-colors"
                 >
-                    <div className="avatar placeholder">
-                        <div className="bg-neutral text-neutral-content rounded-full w-8 h-8 flex items-center justify-center">
-                            <span className="text-xs leading-none">DJ</span>
-                        </div>
-                    </div>
+                    <UserAvatar
+                        avatarUrl={user?.avatarUrl}
+                        firstname={user?.firstname}
+                        lastname={user?.lastname}
+                        size={32}
+                    />
                     <span className="text-sm font-medium hidden sm:block">
                         {user ? `${user.firstname} ${user.lastname}` : "Invité"}
                     </span>

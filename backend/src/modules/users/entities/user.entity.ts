@@ -61,4 +61,7 @@ export class User {
 
   @Column({ type: 'varchar', length: 7, nullable: true })
   usageMonth!: string | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true, default: null })
+  avatarUrl!: string | null;
 }

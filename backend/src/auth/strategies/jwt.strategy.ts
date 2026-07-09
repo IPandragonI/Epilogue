@@ -48,6 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       nbCurationUsedThisMonth: user.nbCurationUsedThisMonth,
       nbIdeaGenerationUsedThisMonth: user.nbIdeaGenerationUsedThisMonth,
       usageMonth: user.usageMonth,
+      avatarUrl: user.avatarUrl ?? null,
     };
   }
 }

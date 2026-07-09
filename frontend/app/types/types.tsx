@@ -132,6 +132,7 @@ export interface User {
     nbCurationUsedThisMonth: number;
     nbIdeaGenerationUsedThisMonth: number;
     usageMonth: string | null;
+    avatarUrl?: string | null;
 }
 
 export interface Agency {

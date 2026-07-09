@@ -18,8 +18,11 @@ import {
     Pencil,
     Plus,
     X,
-    Check, Trash,
+    Check,
+    Trash,
+    ImageIcon,
 } from "lucide-react";
+import UserAvatar from "@/app/components/app/UserAvatar";
 import { UserRole } from "@/app/types/types";
 import { useAuth } from "@/app/hooks/useAuth";
 import Swal from "sweetalert2";
@@ -31,6 +34,7 @@ interface ProfileForm {
     email: string;
     password: string;
     role: UserRole;
+    avatarUrl: string;
 }
 
 interface NotionForm {
@@ -53,6 +57,7 @@ interface AgencyUser {
     lastname: string;
     email: string;
     role: UserRole;
+    avatarUrl: string;
 }
 
 // ── Initial data ───────────────────────────────────────────────────────────
@@ -62,6 +67,7 @@ const INITIAL_PROFILE: ProfileForm = {
     email: "",
     password: "",
     role: UserRole.PUBLIC,
+    avatarUrl: "",
 };
 
 const INITIAL_NOTION: NotionForm = {
@@ -189,16 +195,6 @@ function Toast({ message }: { message: string }) {
     );
 }
 
-// ── Avatar initials ────────────────────────────────────────────────────────
-function Avatar({ firstname, lastname }: { firstname: string; lastname: string }) {
-    return (
-        <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs shrink-0 select-none">
-            {(firstname?.[0] ?? "").toUpperCase()}{(lastname?.[0] ?? "").toUpperCase()}
-        </div>
-    );
-}
-
-// ── Agency User Row ────────────────────────────────────────────────────────
 function AgencyUserRow({
                            agencyUser,
                            onSave,
@@ -280,7 +276,12 @@ function AgencyUserRow({
 
     return (
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-base-200 bg-base-50 hover:bg-base-100 transition-colors">
-            <Avatar firstname={firstname} lastname={lastname} />
+            <UserAvatar
+                avatarUrl={agencyUser.avatarUrl}
+                firstname={agencyUser.firstname}
+                lastname={agencyUser.lastname}
+                size={32}
+            />
 
             {editing ? (
                 <div className="flex flex-1 items-center gap-2 min-w-0">
@@ -548,6 +549,7 @@ export default function SettingsPage() {
                 email: serverUser?.email ?? "",
                 password: "",
                 role: (serverUser?.role as UserRole) ?? UserRole.PUBLIC,
+                avatarUrl: serverUser?.avatarUrl ?? "",
             };
 
             const notionToken = serverUser?.agency?.notionToken ?? serverUser?.agency?.notion_token ?? serverUser?.notionToken ?? serverUser?.notion_token ?? '';
@@ -649,6 +651,7 @@ export default function SettingsPage() {
             email: profile.email,
         };
         if (profile.password) (payload as any).password = profile.password;
+        if (profile.avatarUrl !== undefined) (payload as any).avatarUrl = profile.avatarUrl || null;
 
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}`, {
@@ -768,9 +771,12 @@ export default function SettingsPage() {
 
                         {/* Avatar + role */}
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-lg shrink-0 select-none">
-                                {profile.firstname?.[0] ?? ""}{profile.lastname?.[0] ?? ""}
-                            </div>
+                            <UserAvatar
+                                avatarUrl={profile.avatarUrl}
+                                firstname={profile.firstname}
+                                lastname={profile.lastname}
+                                size={56}
+                            />
                             <div>
                                 <p className="text-sm font-semibold text-base-content">
                                     {profile.firstname} {profile.lastname}
@@ -820,6 +826,22 @@ export default function SettingsPage() {
                                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                                     className="input input-sm w-full pl-8 text-sm border-none focus:outline-none bg-transparent"
                                     placeholder="email@exemple.com"
+                                />
+                            </InputWrap>
+                        </Field>
+
+                        <Field
+                            label="Photo de profil"
+                            hint="Collez l'URL d'une image (JPEG, PNG, WebP). Laissez vide pour afficher vos initiales."
+                        >
+                            <InputWrap>
+                                <ImageIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30 pointer-events-none" />
+                                <input
+                                    type="url"
+                                    value={profile.avatarUrl}
+                                    onChange={(e) => setProfile({ ...profile, avatarUrl: e.target.value })}
+                                    className="input input-sm w-full pl-8 text-sm border-none focus:outline-none bg-transparent"
+                                    placeholder="https://exemple.com/photo.jpg"
                                 />
                             </InputWrap>
                         </Field>
