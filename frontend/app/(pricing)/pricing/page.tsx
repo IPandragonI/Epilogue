@@ -342,11 +342,26 @@ export default function PricingPage() {
                         </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-base-200">
-                        <UsageBar label="Tokens IA" used={0} max={activePlan.maxTokenPerMonth}/>
-                        <UsageBar label="Curations" used={0} max={activePlan.maxCurationPerMonth}/>
-                        <UsageBar label="Générations d'idées" used={0} max={activePlan.maxIdeaGenerationPerMonth}/>
+                        <UsageBar
+                            label="Tokens IA"
+                            used={user?.nbTokenUsedThisMonth ?? 0}
+                            max={activePlan.maxTokenPerMonth}
+                        />
+
+                        <UsageBar
+                            label="Curations"
+                            used={user?.nbCurationUsedThisMonth ?? 0}
+                            max={activePlan.maxCurationPerMonth}
+                        />
+
+                        <UsageBar
+                            label="Générations d'idées"
+                            used={user?.nbIdeaGenerationUsedThisMonth ?? 0}
+                            max={activePlan.maxIdeaGenerationPerMonth}
+                        />
                     </div>
                     <p className="text-xs text-base-content/40">
+                        Utilisation pour {user?.usageMonth ?? "ce mois"}.
                         Les compteurs se réinitialisent automatiquement chaque mois.
                     </p>
                 </div>
