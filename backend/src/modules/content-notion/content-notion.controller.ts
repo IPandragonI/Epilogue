@@ -1,13 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Param, UseGuards } from '@nestjs/common';
 import { ContentNotionService } from './content-notion.service';
-import { CreateContentNotionDto } from './dto/create-content-notion.dto';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { CurrentUser } from '../../auth/decorators/auth.decorators';
+
 @Controller('content-notion')
 export class ContentNotionController {
   constructor(private readonly contentNotionService: ContentNotionService) {}
 
-  @Post()
-  create(@Body() createContentNotionDto: CreateContentNotionDto) {
-    return this.contentNotionService.create(createContentNotionDto);
+  @Post('sync/:contentId')
+  @UseGuards(JwtAuthGuard)
+  sync(
+    @Param('contentId') contentId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.contentNotionService.syncContent(contentId, user.id);
   }
 
   @Get()

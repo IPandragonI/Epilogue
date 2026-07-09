@@ -8,15 +8,16 @@ export class ContentNotion {
   id!: string;
 
   @Column({
+    name: 'notion_sync_status',
     type: 'enum',
     enum: ContentNotionStatusEnum,
     default: ContentNotionStatusEnum.SYNCING,
   })
-  notion_sync_status!: ContentNotionStatusEnum;
+  notionSyncStatus!: ContentNotionStatusEnum;
 
-  @Column({ type: 'varchar', length: 255 })
-  notion_page_id!: string;
+  @Column({ name: 'notion_page_id', type: 'varchar', length: 255, default: '' })
+  notionPageId!: string;
 
-  @OneToOne(() => Content, (content) => content.id, { cascade: true })
+  @OneToOne(() => Content, (content) => content.notion)
   content!: Content;
 }

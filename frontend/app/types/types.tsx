@@ -136,6 +136,7 @@ export interface Agency {
     id: string;
     name: string;
     notion_token: string;
+    notionParentPageId?: string;
 }
 
 export enum UserRole {

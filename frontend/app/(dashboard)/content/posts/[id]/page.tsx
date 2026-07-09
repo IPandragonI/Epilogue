@@ -6,7 +6,7 @@ import {useRouter, useParams, notFound} from "next/navigation";
 import {RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2, Download, Copy, Check, FileText, FileCode, ChevronDown} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
 import TextEditor from "@/app/components/content/writing/TextEditor";
-import {Content, PlatformConfig, Platform, StatusLabels, ContentStatus} from "@/app/types/types";
+import {Content, PlatformConfig, Platform, StatusLabels, ContentStatus, NotionSyncStatus} from "@/app/types/types";
 import Swal from "sweetalert2";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -306,7 +306,32 @@ export default function PostDetailPage() {
     };
 
     const handleNotionAction = async () => {
-        // TODO: Endpoint Notion (envoi / synchro)
+        setSyncing(true);
+        try {
+            const res = await fetch(`${API_URL}/content-notion/sync/${content.id}`, {
+                method: "POST",
+                credentials: "include",
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                const message = Array.isArray(err?.message)
+                    ? err.message.join(", ")
+                    : err?.message ?? "Erreur de synchronisation";
+                throw new Error(message);
+            }
+
+            const notion = await res.json();
+            setContent({ ...content, notion });
+            await Toast.fire({
+                icon: "success",
+                title: hasNotion ? "Post synchronisé avec Notion" : "Post envoyé vers Notion",
+            });
+        } catch (e: any) {
+            await Toast.fire({ icon: "error", title: e.message || "Erreur de synchronisation avec Notion" });
+        } finally {
+            setSyncing(false);
+        }
     };
 
     const handleCalculateSeo = async () => {
@@ -460,7 +485,9 @@ export default function PostDetailPage() {
                                 <span>Temps de lecture : {Math.ceil(wordCount / 200)} min</span>
                                 <span className="flex items-center gap-1.5">
                                     <RefreshCw size={11}/>
-                                    {content.notion?.notionSyncStatus ?? "Non lié à Notion"}
+                                    {content.notion
+                                        ? (NotionSyncStatus[content.notion.notionSyncStatus as keyof typeof NotionSyncStatus] ?? content.notion.notionSyncStatus)
+                                        : "Non lié à Notion"}
                                 </span>
                             </div>
                         </>

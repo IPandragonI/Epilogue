@@ -12,6 +12,9 @@ export class Agency {
   @Column({ type: 'varchar', length: 255, default: '' })
   notionToken!: string;
 
+  @Column({ type: 'varchar', length: 255, default: '' })
+  notionParentPageId!: string;
+
   @OneToMany(() => User, (user) => user.agency)
   users: User[];
 }

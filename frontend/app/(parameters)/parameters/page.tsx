@@ -35,6 +35,7 @@ interface ProfileForm {
 
 interface NotionForm {
     notionKey: string;
+    notionParentPageId: string;
 }
 
 interface SavedExists {
@@ -65,6 +66,7 @@ const INITIAL_PROFILE: ProfileForm = {
 
 const INITIAL_NOTION: NotionForm = {
     notionKey: "",
+    notionParentPageId: "",
 };
 
 const INITIAL_EXISTS: SavedExists = {
@@ -549,9 +551,11 @@ export default function SettingsPage() {
             };
 
             const notionToken = serverUser?.agency?.notionToken ?? serverUser?.agency?.notion_token ?? serverUser?.notionToken ?? serverUser?.notion_token ?? '';
+            const notionParentPageId = serverUser?.agency?.notionParentPageId ?? '';
 
             const mappedNotion: NotionForm = {
                 notionKey: notionToken,
+                notionParentPageId,
             };
 
             const mappedExists: SavedExists = {
@@ -559,7 +563,7 @@ export default function SettingsPage() {
                 lastname: Boolean(serverUser?.lastname),
                 email: Boolean(serverUser?.email),
                 notionKey: Boolean(notionToken),
-                databaseUrl: Boolean(serverUser?.notion?.databaseUrl),
+                databaseUrl: Boolean(notionParentPageId),
                 workspaceUrl: Boolean(serverUser?.notion?.workspaceUrl),
             };
 
@@ -679,7 +683,10 @@ export default function SettingsPage() {
         e.preventDefault();
         if (!notionDirty) return;
 
-        const payload = { notionToken: notion.notionKey };
+        const payload = {
+            notionToken: notion.notionKey,
+            notionParentPageId: notion.notionParentPageId,
+        };
 
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/agency/${user.agency.id}`, {
@@ -697,7 +704,11 @@ export default function SettingsPage() {
             }
 
             setSavedNotionSnapshot(JSON.stringify(notion));
-            setExists((prev) => ({ ...prev, notionKey: Boolean(notion.notionKey) }));
+            setExists((prev) => ({
+                ...prev,
+                notionKey: Boolean(notion.notionKey),
+                databaseUrl: Boolean(notion.notionParentPageId),
+            }));
             showToast('Connexion Notion enregistrée');
         } catch (err: any) {
             showToast(err?.message || 'Erreur réseau');
@@ -916,6 +927,25 @@ export default function SettingsPage() {
                                 >
                                     {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
+                            </InputWrap>
+                        </Field>
+
+                        {/* Parent page ID */}
+                        <Field
+                            label="ID de la page parente Notion"
+                            hint="Ouvrez votre page Notion → Partager → Copier le lien. L'ID est la suite de chiffres et lettres à la fin de l'URL (ex : 1a2b3c4d…). Pensez aussi à inviter votre intégration sur cette page."
+                            exists={exists.databaseUrl}
+                        >
+                            <InputWrap exists={exists.databaseUrl}>
+                                <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30 pointer-events-none" />
+                                <input
+                                    disabled={user.role !== UserRole.ADMIN}
+                                    type="text"
+                                    value={notion.notionParentPageId}
+                                    onChange={(e) => setNotion({ ...notion, notionParentPageId: e.target.value })}
+                                    className="input input-sm w-full pl-8 text-sm font-mono border-none focus:outline-none bg-transparent"
+                                    placeholder="1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d"
+                                />
                             </InputWrap>
                         </Field>
 

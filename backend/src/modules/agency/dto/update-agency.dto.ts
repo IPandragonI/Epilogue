@@ -6,4 +6,8 @@ export class UpdateAgencyDto extends PartialType(CreateAgencyDto) {
   @IsOptional()
   @IsString()
   notionToken?: string;
+
+  @IsOptional()
+  @IsString()
+  notionParentPageId?: string;
 }
