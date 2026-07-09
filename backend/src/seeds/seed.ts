@@ -37,6 +37,7 @@ async function seed() {
       Content,
       User,
       Agency,
+      SubscriptionPlan
     ];
     for (const entity of entities) {
       const repository = dataSource.getRepository(entity);
