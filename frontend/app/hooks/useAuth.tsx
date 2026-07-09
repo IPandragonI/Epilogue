@@ -31,5 +31,5 @@ export function useAuth() {
     fetchUser();
   }, []);
 
-  return { user, loading };
+  return { user, loading, setUser };
 }

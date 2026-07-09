@@ -1,24 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class GeneratePostDto {
-  @ApiProperty({
-    example: 'LinkedIn',
-  })
+  @ApiProperty({ example: 'LinkedIn' })
   @IsString()
   @IsNotEmpty()
   platform: string;
 
-  @ApiProperty({
-    example: 'Les avantages du télétravail',
-  })
+  @ApiProperty({ example: 'Les avantages du télétravail' })
   @IsString()
   @IsNotEmpty()
   subject: string;
 
-  @ApiProperty({
-    example: 'Professionnel',
-  })
+  @ApiProperty({ example: 'Professionnel' })
   @IsString()
   @IsNotEmpty()
   @IsIn([
@@ -30,11 +30,19 @@ export class GeneratePostDto {
   ])
   tone: string;
 
-  @ApiProperty({
-    example: 'Court',
-  })
+  @ApiProperty({ example: 'Court' })
   @IsString()
   @IsIn(['court', 'moyen', 'long'])
   @IsNotEmpty()
   length: string;
+
+  @ApiProperty({
+    required: false,
+    type: [String],
+    description: 'IDs des éléments de curation à utiliser comme contexte',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  curationItemIds?: string[];
 }

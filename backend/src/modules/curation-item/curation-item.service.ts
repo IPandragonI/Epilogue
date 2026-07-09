@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateCurationItemDto } from './dto/create-curation-item.dto';
 import { UpdateCurationItemDto } from './dto/update-curation-item.dto';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CurationItem } from './entities/curation-item.entity';
 import { CurationSource } from '../curation-source/entities/curation-source.entity';
@@ -28,6 +28,22 @@ export class CurationItemService {
     };
 
     return this.curationItemRepository.save(toSave);
+  }
+
+  findAllByUser(userId: string) {
+    return this.curationItemRepository.find({
+      where: { user: { id: userId } },
+      relations: ['source'],
+      order: { lastFetchedAt: 'DESC' },
+    });
+  }
+
+  findByIds(ids: string[], userId: string) {
+    if (!ids.length) return Promise.resolve([]);
+    return this.curationItemRepository.find({
+      where: { id: In(ids), user: { id: userId } },
+      relations: ['source'],
+    });
   }
 
   findAll() {

@@ -107,6 +107,7 @@ export class UsersService {
   async incrementUsage(
     userId: string,
     feature: SubscriptionFeatureEnum,
+    amount = 1,
   ): Promise<void> {
     const currentMonth = this.getCurrentMonth();
     const user = await this.userRepository.findOneBy({ id: userId });
@@ -125,10 +126,15 @@ export class UsersService {
     const fieldMap: Record<SubscriptionFeatureEnum, keyof User> = {
       [SubscriptionFeatureEnum.TOKEN]: 'nbTokenUsedThisMonth',
       [SubscriptionFeatureEnum.CURATION]: 'nbCurationUsedThisMonth',
-      [SubscriptionFeatureEnum.IDEA_GENERATION]: 'nbIdeaGenerationUsedThisMonth',
+      [SubscriptionFeatureEnum.IDEA_GENERATION]:
+        'nbIdeaGenerationUsedThisMonth',
     };
 
-    await this.userRepository.increment({ id: userId }, fieldMap[feature] as string, 1);
+    await this.userRepository.increment(
+      { id: userId },
+      fieldMap[feature] as string,
+      amount,
+    );
   }
 
   private getCurrentMonth(): string {

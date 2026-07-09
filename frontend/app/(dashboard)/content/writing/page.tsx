@@ -8,6 +8,8 @@ import TextEditor from "@/app/components/content/writing/TextEditor";
 import Swal from "sweetalert2";
 import Link from "next/link";
 import {useRouter, useSearchParams} from "next/navigation";
+import CurationPicker from "@/app/components/content/writing/CurationPicker";
+import {User, AgencySubscription} from "@/app/types/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -36,6 +38,10 @@ export default function WritingPage() {
     const [selectedIdea, setSelectedIdea] = useState<SuggestedTopic | null>(null);
     const [loadingIdea, setLoadingIdea] = useState(false);
     const [ideaError, setIdeaError] = useState<string | null>(null);
+
+    const [curationItemIds, setCurationItemIds] = useState<string[]>([]);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [subscription, setSubscription] = useState<AgencySubscription | null>(null);
 
     const currentPlatform = PlatformConfig[platform];
     const isEmpty = !content || content.replace(/<[^>]*>/g, "").trim().length === 0;
@@ -87,6 +93,39 @@ export default function WritingPage() {
         fetchIdea();
     }, [ideaId]);
 
+    const fetchAccountData = async () => {
+        try {
+            const userRes = await fetch(`${API_URL}/auth/me`, {
+                credentials: "include",
+                cache: "no-store",
+            });
+
+            if (!userRes.ok) return;
+
+            const user = await userRes.json();
+            setCurrentUser(user);
+
+            const agencyId = user.agency?.id;
+
+            if (!agencyId) return;
+
+            const subRes = await fetch(`${API_URL}/agency-subscriptions/agency/${agencyId}`, {
+                credentials: "include",
+                cache: "no-store",
+            });
+
+            if (subRes.ok) {
+                setSubscription(await subRes.json());
+            }
+        } catch {
+            // silencieux : le picker se désactive juste si aucune donnée
+        }
+    };
+
+    useEffect(() => {
+        fetchAccountData();
+    }, []);
+
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
         try {
@@ -97,10 +136,15 @@ export default function WritingPage() {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 credentials: "include",
-                body: JSON.stringify({platform, subject: prompt, tone, length}),
+                body: JSON.stringify({platform, subject: prompt, tone, length, curationItemIds}),
             });
 
             if (!res.ok) {
+                if (res.status === 403) {
+                    const err = await res.json().catch(() => null);
+                    await Toast.fire({icon: "warning", title: err?.message ?? "Quota atteint"});
+                    return;
+                }
                 throw new Error();
             }
 
@@ -289,6 +333,14 @@ export default function WritingPage() {
                             {generating || loadingIdea ? <span className="loading loading-spinner loading-xs"/> : <Sparkles size={13}/>} 
                             {loadingIdea ? "Chargement..." : generating ? "Génération..." : "Générer"}
                         </button>
+
+                        <CurationPicker
+                            selectedIds={curationItemIds}
+                            onChange={setCurationItemIds}
+                            subscription={subscription}
+                            curationUsedThisMonth={currentUser?.nbCurationUsedThisMonth ?? 0}
+                            onRefreshQuota={fetchAccountData}
+                        />
                     </div>
                 </div>
 

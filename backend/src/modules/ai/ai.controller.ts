@@ -67,7 +67,10 @@ export class AIController {
     status: 201,
     description: 'Titre et résumé générés avec succès.',
     schema: {
-      example: { success: true, data: { title: 'Titre', summary: 'Résumé...' } },
+      example: {
+        success: true,
+        data: { title: 'Titre', summary: 'Résumé...' },
+      },
     },
   })
   @ApiResponse({ status: 400, description: "L'URL est requise." })
@@ -111,8 +114,14 @@ export class AIController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Fichier manquant, type non supporté ou taille dépassée.' })
-  @ApiResponse({ status: 500, description: "Erreur lors de l'analyse par l'IA." })
+  @ApiResponse({
+    status: 400,
+    description: 'Fichier manquant, type non supporté ou taille dépassée.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: "Erreur lors de l'analyse par l'IA.",
+  })
   async upload(@Req() req: FastifyRequest) {
     if (!req.isMultipart()) {
       throw new BadRequestException('Request must be multipart/form-data');
@@ -161,17 +170,23 @@ export class AIController {
   @Post('generate-post')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @UseInterceptors(UsageTrackingInterceptor)
-  @SubscriptionFeature(SubscriptionFeatureEnum.TOKEN)
+  @SubscriptionFeature([
+    SubscriptionFeatureEnum.TOKEN,
+    SubscriptionFeatureEnum.CURATION,
+  ])
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Génère un post IA pour un réseau social',
-  })
-  async generatePost(@Body() dto: GeneratePostDto) {
+  @ApiOperation({ summary: 'Génère un post IA pour un réseau social' })
+  async generatePost(
+    @Body() dto: GeneratePostDto,
+    @Req() req: FastifyRequest & { user: { id: string } },
+  ) {
     return await this.aiService.generatePost(
       dto.platform,
       dto.subject,
       dto.tone,
       dto.length,
+      dto.curationItemIds ?? [],
+      req.user.id,
     );
   }
 }

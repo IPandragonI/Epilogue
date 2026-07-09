@@ -11,6 +11,7 @@ import {
 } from '../decorators/subscription.decorator';
 import { AgencySubscriptionService } from '../../modules/agency-subscription/agency-subscription.service';
 import { UsersService } from '../../modules/users/users.service';
+import { getRequestedAmount } from '../utils/subscription-usage.util';
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
@@ -21,12 +22,12 @@ export class SubscriptionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const feature = this.reflector.getAllAndOverride<SubscriptionFeatureEnum>(
+    const features = this.reflector.getAllAndOverride<SubscriptionFeatureEnum[]>(
       SUBSCRIPTION_FEATURE_KEY,
       [context.getHandler(), context.getClass()],
     );
 
-    if (!feature) return true;
+    if (!features?.length) return true;
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
@@ -73,12 +74,17 @@ export class SubscriptionGuard implements CanActivate {
       },
     };
 
-    const { used, max, label } = limits[feature];
+    for (const feature of features) {
+      const amount = getRequestedAmount(feature, request.body);
+      if (amount <= 0) continue;
 
-    if (used >= max) {
-      throw new ForbiddenException(
-        `Quota mensuel atteint : ${used}/${max} ${label}. Passez à un plan supérieur pour continuer.`,
-      );
+      const { used, max, label } = limits[feature];
+
+      if (used + amount > max) {
+        throw new ForbiddenException(
+          `Quota mensuel atteint : ${used}/${max} ${label}. Passez à un plan supérieur pour continuer.`,
+        );
+      }
     }
 
     return true;

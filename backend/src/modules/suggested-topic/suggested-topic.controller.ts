@@ -21,15 +21,19 @@ import {
   SubscriptionFeature,
   SubscriptionFeatureEnum,
 } from '../../auth/decorators/subscription.decorator';
+import { UsersService } from '../users/users.service';
 
 @Controller('suggested-topic')
 export class SuggestedTopicController {
-  constructor(private readonly suggestedTopicService: SuggestedTopicService) {}
+  constructor(
+    private readonly suggestedTopicService: SuggestedTopicService,
+    private usersService: UsersService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
-  @UseInterceptors(UsageTrackingInterceptor)
-  @SubscriptionFeature(SubscriptionFeatureEnum.IDEA_GENERATION)
+  // @UseInterceptors(UsageTrackingInterceptor)
+  // @SubscriptionFeature([SubscriptionFeatureEnum.IDEA_GENERATION, SubscriptionFeatureEnum.CURATION])
   create(
     @Body() createContentIdeaDto: CreateSuggestedTopicDto,
     @CurrentUser() user: { id: string },
@@ -40,16 +44,21 @@ export class SuggestedTopicController {
   @Post('generate')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @UseInterceptors(UsageTrackingInterceptor)
-  @SubscriptionFeature(SubscriptionFeatureEnum.IDEA_GENERATION)
-  generate(
+  @SubscriptionFeature([
+    SubscriptionFeatureEnum.IDEA_GENERATION,
+    SubscriptionFeatureEnum.CURATION,
+  ])
+  async generate(
     @Body() dto: GenerateSuggestedTopicsDto,
     @CurrentUser() user: { id: string },
   ) {
-    return this.suggestedTopicService.generateForUser(
+    const topics = await this.suggestedTopicService.generateForUser(
       user.id,
       dto.terms,
-      dto.curationItemIds,
+      dto.curationItemIds ?? [],
     );
+
+    return { topics };
   }
 
   @Get()

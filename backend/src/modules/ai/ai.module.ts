@@ -8,9 +8,10 @@ import { UsersModule } from '../users/users.module';
 import { AgencySubscriptionModule } from '../agency-subscription/agency-subscription.module';
 import { SubscriptionGuard } from '../../auth/guards/subscription.guard';
 import { UsageTrackingInterceptor } from '../../auth/interceptors/usage-tracking.interceptor';
+import { CurationItemModule } from '../curation-item/curation-item.module';
 
 @Module({
-  imports: [UsersModule, AgencySubscriptionModule],
+  imports: [CurationItemModule, UsersModule, AgencySubscriptionModule],
   controllers: [AIController],
   providers: [
     AIService,

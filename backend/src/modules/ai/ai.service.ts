@@ -1,7 +1,12 @@
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { AI_PROVIDER } from './ai.provider';
 import * as aiProviderInterface from './interfaces/ai-provider.interface';
 import { ScrappingService } from './scrapping.service';
+import { CurationItemService } from '../curation-item/curation-item.service';
 import {
   GeneratedSuggestedTopic,
   SuggestedTopicGenerationContext,
@@ -13,6 +18,7 @@ export class AIService {
     @Inject(AI_PROVIDER)
     private readonly provider: aiProviderInterface.AIProvider,
     private readonly scrappingService: ScrappingService,
+    private readonly curationItemService: CurationItemService,
   ) {}
 
   async generateText(prompt: string): Promise<string> {
@@ -20,13 +26,16 @@ export class AIService {
   }
 
   async analyzeDocument(
-      file: Express.Multer.File,
+    file: Express.Multer.File,
   ): Promise<{ title: string; summary: string; fileName: string }> {
-      const fileId = await this.provider.uploadFile(file);
-      const fileUrl = await this.provider.getFileUrl(fileId);
-      const { title, summary } = await this.provider.analyzeDocument(fileUrl, file.originalname);
-      await this.provider.deleteFile(fileId);
-      return { title, summary, fileName: file.originalname };
+    const fileId = await this.provider.uploadFile(file);
+    const fileUrl = await this.provider.getFileUrl(fileId);
+    const { title, summary } = await this.provider.analyzeDocument(
+      fileUrl,
+      file.originalname,
+    );
+    await this.provider.deleteFile(fileId);
+    return { title, summary, fileName: file.originalname };
   }
 
   async generateTextFromWebContent(
@@ -47,6 +56,8 @@ export class AIService {
     subject: string,
     tone: string,
     length: string,
+    curationItemIds: string[] = [],
+    userId?: string,
   ): Promise<{
     title: string;
     content: string;
@@ -54,7 +65,31 @@ export class AIService {
     references: string[];
   }> {
     try {
-      return await this.provider.generatePost(platform, subject, tone, length);
+      let curationContext: {
+        title: string;
+        summary?: string;
+        sourceName?: string;
+      }[] = [];
+
+      if (curationItemIds.length && userId) {
+        const items = await this.curationItemService.findByIds(
+          curationItemIds,
+          userId,
+        );
+        curationContext = items.map((item) => ({
+          title: item.title,
+          summary: item.summary,
+          sourceName: item.source?.name,
+        }));
+      }
+
+      return await this.provider.generatePost(
+        platform,
+        subject,
+        tone,
+        length,
+        curationContext,
+      );
     } catch (error) {
       throw new InternalServerErrorException(
         `Erreur lors de la génération du post : ${error.message}`,
@@ -75,4 +110,3 @@ export class AIService {
     }
   }
 }
-

@@ -5,12 +5,13 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, mergeMap } from 'rxjs';
 import {
   SUBSCRIPTION_FEATURE_KEY,
   SubscriptionFeatureEnum,
 } from '../decorators/subscription.decorator';
 import { UsersService } from '../../modules/users/users.service';
+import { getRequestedAmount } from '../utils/subscription-usage.util';
 
 @Injectable()
 export class UsageTrackingInterceptor implements NestInterceptor {
@@ -20,23 +21,53 @@ export class UsageTrackingInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const feature = this.reflector.getAllAndOverride<SubscriptionFeatureEnum>(
-      SUBSCRIPTION_FEATURE_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const features: SubscriptionFeatureEnum[] | undefined =
+      this.reflector.getAllAndOverride(SUBSCRIPTION_FEATURE_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
 
-    if (!feature) return next.handle();
+    if (!features?.length) {
+      return next.handle();
+    }
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
+    const body = request.body;
 
     return next.handle().pipe(
-      tap(() => {
-        if (user?.id) {
-          this.usersService.incrementUsage(user.id, feature).catch(() => {
-            // Ne pas bloquer la réponse si l'incrément échoue
-          });
+      mergeMap(async (data: unknown) => {
+        if (!user?.id) {
+          return data;
         }
+
+        const increments = features
+          .map((feature) => ({
+            feature,
+            amount: getRequestedAmount(feature, body),
+          }))
+          .filter(({ amount }) => amount > 0);
+
+        if (!increments.length) {
+          return data;
+        }
+
+        await Promise.all(
+          increments.map(({ feature, amount }) =>
+            this.usersService
+              .incrementUsage(user.id, feature, amount)
+              .catch(() => {
+                // Ne pas bloquer la réponse si l'incrément échoue
+              }),
+          ),
+        );
+
+        const updatedUser = await this.usersService.findOne(user.id);
+
+        return {
+          ...(typeof data === 'object' && data !== null ? data : {}),
+          nbCurationUsedThisMonth: updatedUser.nbCurationUsedThisMonth,
+        };
       }),
     );
   }

@@ -190,6 +190,11 @@ export class MistralProvider implements AIProvider {
     subject: string,
     tone: string,
     length: string,
+    curationContext: {
+      title: string;
+      summary?: string;
+      sourceName?: string;
+    }[] = [],
   ): Promise<{
     title: string;
     content: string;
@@ -198,8 +203,19 @@ export class MistralProvider implements AIProvider {
   }> {
     const systemPrompt = this.promptService.getPrompt('generate-post');
     const lengthConfig = getLengthConfig(platform, length);
+    const maxTokens = Math.min(
+      Math.ceil(lengthConfig.maxWords * 1.6) + 400,
+      8000,
+    );
 
-    const maxTokens = Math.min(Math.ceil(lengthConfig.maxWords * 1.6) + 400, 8000,);
+    const curationBlock = curationContext.length
+      ? `\n\nSources de curation à utiliser comme base factuelle/inspiration (reformuler, ne pas copier) :\n${curationContext
+          .map(
+            (c, i) =>
+              `${i + 1}. ${c.title}${c.sourceName ? ` (source: ${c.sourceName})` : ''}${c.summary ? ` — ${c.summary}` : ''}`,
+          )
+          .join('\n')}`
+      : '';
 
     const response: MistralResponse = await postJSON<MistralResponse>(
       `https://api.mistral.ai/v1/chat/completions`,
@@ -214,7 +230,7 @@ export class MistralProvider implements AIProvider {
             content: [
               {
                 type: 'text',
-                text: `Platform: ${platform}\nSubject: ${subject}\nTone: ${tone}\nLength: ${lengthConfig.instruction}`,
+                text: `Platform: ${platform}\nSubject: ${subject}\nTone: ${tone}\nLength: ${lengthConfig.instruction}${curationBlock}`,
               },
             ],
           },
@@ -276,7 +292,9 @@ export class MistralProvider implements AIProvider {
       { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` },
     );
 
-    const parsed = JSON.parse(cleanJsonResponse(response.choices[0].message.content));
+    const parsed = JSON.parse(
+      cleanJsonResponse(response.choices[0].message.content),
+    );
     const ideas = Array.isArray(parsed?.ideas) ? parsed.ideas : [];
     const normalizedIdeas = normalizeGeneratedSuggestedTopics(ideas);
 

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { CurationItemService } from './curation-item.service';
 import { CreateCurationItemDto } from './dto/create-curation-item.dto';
@@ -19,6 +20,7 @@ import {
   SubscriptionFeature,
   SubscriptionFeatureEnum,
 } from '../../auth/decorators/subscription.decorator';
+import { FastifyRequest } from 'fastify';
 
 @Controller('curation-item')
 export class CurationItemController {
@@ -30,6 +32,12 @@ export class CurationItemController {
   @SubscriptionFeature(SubscriptionFeatureEnum.CURATION)
   create(@Body() createCurationItemDto: CreateCurationItemDto) {
     return this.curationItemService.create(createCurationItemDto);
+  }
+
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  findMine(@Req() req: FastifyRequest & { user: { id: string } }) {
+    return this.curationItemService.findAllByUser(req.user.id);
   }
 
   @Get()

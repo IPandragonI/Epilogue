@@ -21,6 +21,11 @@ export interface AIProvider {
     subject: string,
     tone: string,
     length: string,
+    curationContext?: {
+      title: string;
+      summary?: string;
+      sourceName?: string;
+    }[],
   ): Promise<{
     title: string;
     content: string;

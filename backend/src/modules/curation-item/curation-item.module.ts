@@ -16,6 +16,7 @@ import { UsageTrackingInterceptor } from '../../auth/interceptors/usage-tracking
     UsersModule,
     AgencySubscriptionModule,
   ],
+  exports: [CurationItemService],
   controllers: [CurationItemController],
   providers: [
     CurationItemService,
