@@ -57,9 +57,9 @@ export default function Navbar({ onToggleSidebar, user }: NavbarProps) {
                                 await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
                                     method: "POST",
                                     credentials: "include",
+                                }).finally(() => {
+                                    window.location.href = "/login";
                                 });
-
-                                window.location.href = "/login";
                             }}
                             className="text-error"
                         >
