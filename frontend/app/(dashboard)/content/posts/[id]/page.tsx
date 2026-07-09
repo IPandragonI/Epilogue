@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {useEffect, useState} from "react";
 import {useRouter, useParams, notFound} from "next/navigation";
-import {RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2, Download, Copy, Check, FileText, FileCode, ChevronDown} from "lucide-react";
+import {RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2, Download, Copy, Check, FileText, FileCode, ChevronDown, Globe, Clock, FileEdit} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
 import TextEditor from "@/app/components/content/writing/TextEditor";
 import {Content, PlatformConfig, Platform, StatusLabels, ContentStatus, NotionSyncStatus} from "@/app/types/types";
@@ -132,6 +132,69 @@ function ExportMenu({ title, body }: { title: string; body: string }) {
                         <span>Télécharger .md</span>
                     </button>
                 </li>
+            </ul>
+        </div>
+    );
+}
+
+const STATUS_OPTIONS: { value: ContentStatus; label: string; icon: React.ReactNode; cls: string }[] = [
+    {
+        value: ContentStatus.DRAFT,
+        label: "Brouillon",
+        icon: <FileEdit size={13} />,
+        cls: "text-base-content/60",
+    },
+    {
+        value: ContentStatus.WAITING_PUBLISH,
+        label: "En attente",
+        icon: <Clock size={13} />,
+        cls: "text-warning",
+    },
+    {
+        value: ContentStatus.PUBLISHED,
+        label: "Publié",
+        icon: <Globe size={13} />,
+        cls: "text-success",
+    },
+];
+
+function StatusDropdown({ status, onChange }: { status: ContentStatus; onChange: (s: ContentStatus) => void }) {
+    const current = STATUS_OPTIONS.find((o) => o.value === status) ?? STATUS_OPTIONS[0];
+
+    return (
+        <div className="dropdown dropdown-end">
+            <button
+                tabIndex={0}
+                className={`badge gap-1.5 text-xs font-medium border cursor-pointer select-none pr-2 h-auto py-1 ${
+                    status === ContentStatus.PUBLISHED
+                        ? "bg-success/10 text-success border-success/25"
+                        : status === ContentStatus.WAITING_PUBLISH
+                            ? "bg-warning/10 text-warning border-warning/25"
+                            : "bg-base-200 text-base-content/60 border-base-300"
+                }`}
+            >
+                <span className={current.cls}>{current.icon}</span>
+                {current.label}
+                <ChevronDown size={10} className="opacity-60" />
+            </button>
+            <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 w-44 p-1 mt-1 gap-0.5"
+            >
+                {STATUS_OPTIONS.map((opt) => (
+                    <li key={opt.value}>
+                        <button
+                            onClick={() => onChange(opt.value)}
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left ${
+                                opt.value === status ? "bg-base-200 font-semibold" : "hover:bg-base-200"
+                            }`}
+                        >
+                            <span className={opt.cls}>{opt.icon}</span>
+                            {opt.label}
+                            {opt.value === status && <Check size={12} className="ml-auto text-accent" />}
+                        </button>
+                    </li>
+                ))}
             </ul>
         </div>
     );
@@ -334,6 +397,27 @@ export default function PostDetailPage() {
         }
     };
 
+    const handleStatusChange = async (newStatus: ContentStatus) => {
+        if (newStatus === content.status) return;
+        try {
+            const body: Record<string, unknown> = { status: newStatus };
+            if (newStatus === ContentStatus.PUBLISHED && !content.publishedDate) {
+                body.publishedDate = new Date().toISOString();
+            }
+            const res = await fetch(`${API_URL}/content/${content.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error();
+            setContent({ ...content, status: newStatus, publishedDate: body.publishedDate as string ?? content.publishedDate });
+            await Toast.fire({ icon: "success", title: `Statut mis à jour : ${StatusLabels[newStatus]}` });
+        } catch {
+            await Toast.fire({ icon: "error", title: "Erreur lors du changement de statut" });
+        }
+    };
+
     const handleCalculateSeo = async () => {
         // TODO: Endpoint de calcul SEO
     };
@@ -434,15 +518,18 @@ export default function PostDetailPage() {
                     {currentPlatform.icon}
                     {currentPlatform.label}
                 </span>
-                <span className={`badge text-xs font-medium border-none ${
-                    content.status === ContentStatus.PUBLISHED
-                        ? "bg-success/10 text-success"
-                        : content.status === ContentStatus.WAITING_PUBLISH
-                            ? "bg-warning/10 text-warning"
-                            : "bg-base-200 text-base-content/60"
-                }`}>
-                    {StatusLabels[content.status]}
-                </span>
+
+                <StatusDropdown status={content.status} onChange={handleStatusChange} />
+
+                {content.status !== ContentStatus.PUBLISHED && (
+                    <button
+                        onClick={() => handleStatusChange(ContentStatus.PUBLISHED)}
+                        className="btn btn-sm btn-primary gap-2 rounded-lg ml-1"
+                    >
+                        <Globe size={14} />
+                        Publier
+                    </button>
+                )}
             </div>
 
             <div className="flex gap-5 flex-1 min-h-0">

@@ -68,6 +68,8 @@ export interface Content {
     body?: string;
     contentPlatform?: PlatformType;
     date: string;
+    createdAt?: string;
+    publishedDate?: string | null;
     seo?: ContentSeo;
     status: ContentStatus;
     notion?: ContentNotion;
