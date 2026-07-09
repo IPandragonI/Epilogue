@@ -51,12 +51,11 @@ const NAV_ITEMS: NavItem[] = [
     },
     {
         type: "group",
-        label: "Synchronisation Notion",
+        label: "Notion",
         icon: <RefreshCw size={18}/>,
         children: [
-            {label: "Stockage de contenus", href: "/notion/stockage"},
-            {label: "Calendrier éditorial", href: "/notion/calendrier"},
-            {label: "Archives", href: "/notion/archives"},
+            {label: "Stockage de contenus", href: "/notion/contents"},
+            {label: "Calendrier éditorial", href: "/notion/calendar"},
         ],
     },
 ];
