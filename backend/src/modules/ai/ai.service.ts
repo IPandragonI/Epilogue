@@ -2,11 +2,13 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { AI_PROVIDER } from './ai.provider';
 import * as aiProviderInterface from './interfaces/ai-provider.interface';
 import { ScrappingService } from './scrapping.service';
 import { CurationItemService } from '../curation-item/curation-item.service';
+import { ContentService } from '../content/content.service';
 import {
   GeneratedSuggestedTopic,
   SuggestedTopicGenerationContext,
@@ -19,6 +21,7 @@ export class AIService {
     private readonly provider: aiProviderInterface.AIProvider,
     private readonly scrappingService: ScrappingService,
     private readonly curationItemService: CurationItemService,
+    private readonly contentService: ContentService,
   ) {}
 
   async generateText(prompt: string): Promise<string> {
@@ -107,6 +110,39 @@ export class AIService {
     } catch (error) {
       throw new InternalServerErrorException(
         `Erreur lors de la génération des idées : ${error.message}`,
+      );
+    }
+  }
+
+  async analyzeSeo(contentId: string): Promise<{
+    score: number;
+    keywords: string;
+    review: string;
+    tokensUsed: number;
+  }> {
+    const content = await this.contentService.findOne(contentId);
+
+    if (!content) {
+      throw new NotFoundException(`Contenu ${contentId} introuvable`);
+    }
+
+    try {
+      const result = await this.provider.analyzeSeo(
+        content.contentPlatform,
+        content.title,
+        content.body,
+      );
+
+      await this.contentService.updateSeo(contentId, {
+        score: result.score,
+        keywords: result.keywords,
+        review: result.review,
+      });
+
+      return result;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Erreur lors de l'analyse SEO : ${error.message}`,
       );
     }
   }

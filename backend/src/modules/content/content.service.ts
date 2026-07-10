@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { Content } from './entities/content.entity';
@@ -6,12 +6,14 @@ import { ContentStatusEnum } from './entities/contentStatus.enum';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
+import { ContentSeoService } from '../content-seo/content-seo.service';
 
 @Injectable()
 export class ContentService {
   constructor(
     @InjectRepository(Content)
     private contentRepository: Repository<Content>,
+    private readonly contentSeoService: ContentSeoService,
   ) {}
 
   create(createContentDto: CreateContentDto) {
@@ -105,6 +107,30 @@ export class ContentService {
       avgSeoScore: Math.round(Number(avgSeoRaw?.avg ?? 0) * 10) / 10,
       byPlatform,
     };
+  }
+
+  async updateSeo(
+    contentId: string,
+    seoData: { score: number; keywords: string; review: string },
+  ): Promise<Content> {
+    const content = await this.contentRepository.findOne({
+      where: { id: contentId },
+      relations: ['seo'],
+    });
+
+    if (!content) {
+      throw new NotFoundException(`Content with id ${contentId} not found`);
+    }
+
+    if (content.seo) {
+      await this.contentSeoService.update(content.seo.id, seoData);
+    } else {
+      const seo = await this.contentSeoService.create(seoData);
+      content.seo = seo;
+      await this.contentRepository.save(content);
+    }
+
+    return this.findOne(contentId) as Promise<Content>;
   }
 
   update(id: string, updateContentDto: UpdateContentDto) {

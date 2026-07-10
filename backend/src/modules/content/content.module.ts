@@ -3,10 +3,12 @@ import { ContentService } from './content.service';
 import { ContentController } from './content.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Content } from './entities/content.entity';
+import { ContentSeoModule } from '../content-seo/content-seo.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Content])],
+  imports: [TypeOrmModule.forFeature([Content]), ContentSeoModule],
   controllers: [ContentController],
   providers: [ContentService],
+  exports: [ContentService],
 })
 export class ContentModule {}

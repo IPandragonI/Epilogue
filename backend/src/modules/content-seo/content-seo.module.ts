@@ -8,5 +8,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [TypeOrmModule.forFeature([ContentSeo])],
   controllers: [ContentSeoController],
   providers: [ContentSeoService],
+  exports: [ContentSeoService],
 })
 export class ContentSeoModule {}

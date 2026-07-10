@@ -1,6 +1,11 @@
+import { IsOptional, IsString } from 'class-validator';
+
 export class CreateContentSeoDto {
   score!: number;
-  keywords!: string
+  keywords!: string;
   review!: string;
-  contentId!: string;
+
+  @IsOptional()
+  @IsString()
+  contentId?: string;
 }

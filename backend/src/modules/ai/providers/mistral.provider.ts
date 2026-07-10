@@ -10,6 +10,7 @@ import {
   GeneratedSuggestedTopic,
   SuggestedTopicGenerationContext,
 } from '../../suggested-topic/interfaces/suggested-topic-generation.interface';
+import {applyUsageDiscount} from "../utils/token-usage.util";
 
 export class MistralProvider implements AIProvider {
   constructor(private readonly promptService: PromptService) {}
@@ -185,6 +186,51 @@ export class MistralProvider implements AIProvider {
     return JSON.parse(cleaned);
   }
 
+  async analyzeSeo(
+    platform: string,
+    title: string,
+    content: string,
+  ): Promise<{
+    score: number;
+    keywords: string;
+    review: string;
+    tokensUsed: number;
+  }> {
+    const systemPrompt = this.promptService.getPrompt('analyse-seo');
+
+    const response: MistralResponse = await postJSON<MistralResponse>(
+      `https://api.mistral.ai/v1/chat/completions`,
+      {
+        model: 'mistral-small-latest',
+        response_format: { type: 'json_object' },
+        max_tokens: 800,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Platform: ${platform}\nTitre: ${title}\nContenu:\n${content}`,
+              },
+            ],
+          },
+        ],
+      },
+      { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` },
+    );
+
+    const parsed = JSON.parse(response.choices[0].message.content as string);
+    const rawTokensUsed = response.usage?.total_tokens ?? 0;
+
+    return {
+      score: Math.max(0, Math.min(100, Math.round(Number(parsed.score) || 0))),
+      keywords: String(parsed.keywords ?? ''),
+      review: String(parsed.review ?? ''),
+      tokensUsed: applyUsageDiscount(rawTokensUsed),
+    };
+  }
+
   async generatePost(
     platform: string,
     subject: string,
@@ -241,7 +287,10 @@ export class MistralProvider implements AIProvider {
     );
 
     const parsed = JSON.parse(response.choices[0].message.content as string);
-    const content = truncateHtmlByWords(parsed.content ?? '', lengthConfig.maxWords);
+    const content = truncateHtmlByWords(
+      parsed.content ?? '',
+      lengthConfig.maxWords,
+    );
     const rawTokensUsed = response.usage?.total_tokens ?? 0;
     const tokensUsed = applyUsageDiscount(rawTokensUsed);
 
@@ -449,12 +498,6 @@ function cleanJsonResponse(content: unknown): string {
     .replace(/```json\s*/gi, '')
     .replace(/```\s*/g, '')
     .trim();
-}
-
-function applyUsageDiscount(rawTokens: number): number {
-  const rate = Number(process.env.TOKEN_USAGE_DISCOUNT_RATE ?? 1);
-  const safeRate = Number.isFinite(rate) && rate > 0 && rate <= 1 ? rate : 1;
-  return Math.max(Math.round(rawTokens * safeRate), 0);
 }
 
 function getSuggestedTopicCount(terms: string): number {

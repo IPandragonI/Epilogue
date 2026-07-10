@@ -38,4 +38,15 @@ export interface AIProvider {
     terms: string,
     context: SuggestedTopicGenerationContext,
   ): Promise<GeneratedSuggestedTopic[]>;
+
+  analyzeSeo(
+    platform: string,
+    title: string,
+    content: string,
+  ): Promise<{
+    score: number;
+    keywords: string;
+    review: string;
+    tokensUsed: number;
+  }>;
 }

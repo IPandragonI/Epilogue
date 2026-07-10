@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Param,
   Post,
   Req,
   UseGuards,
@@ -192,6 +193,24 @@ export class AIController {
       dto.curationItemIds ?? [],
       req.user.id,
     );
+
+    req.usageAmounts = { [SubscriptionFeatureEnum.TOKEN]: result.tokensUsed };
+
+    const { tokensUsed, ...response } = result;
+    return response;
+  }
+
+  @Post('analyze-seo/:contentId')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @UseInterceptors(UsageTrackingInterceptor)
+  @SubscriptionFeature(SubscriptionFeatureEnum.TOKEN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Analyse SEO d'un contenu existant" })
+  async analyzeSeo(
+    @Param('contentId') contentId: string,
+    @Req() req: FastifyRequest & { usageAmounts?: Record<string, number> },
+  ) {
+    const result = await this.aiService.analyzeSeo(contentId);
 
     req.usageAmounts = { [SubscriptionFeatureEnum.TOKEN]: result.tokensUsed };
 

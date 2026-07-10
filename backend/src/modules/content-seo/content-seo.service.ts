@@ -19,4 +19,8 @@ export class ContentSeoService {
   findAll() {
     return this.contentSeoRepository.find();
   }
+
+  update(id: string, updateContentSeoDto: UpdateContentSeoDto) {
+    return this.contentSeoRepository.update(id, updateContentSeoDto);
+  }
 }
