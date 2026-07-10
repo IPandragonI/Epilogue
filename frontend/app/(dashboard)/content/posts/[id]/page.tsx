@@ -419,7 +419,30 @@ export default function PostDetailPage() {
     };
 
     const handleCalculateSeo = async () => {
-        // TODO: Endpoint de calcul SEO
+        setCalculatingSeo(true);
+        try {
+            const res = await fetch(`${API_URL}/ai/analyze-seo/${content.id}`, {
+                method: "POST",
+                credentials: "include",
+            });
+
+            if (!res.ok) {
+                if (res.status === 403) {
+                    const err = await res.json().catch(() => null);
+                    await Toast.fire({icon: "warning", title: err?.message ?? "Quota atteint"});
+                    return;
+                }
+                throw new Error();
+            }
+
+            const seo: {score: number; keywords: string; review: string} = await res.json();
+            setContent({...content, seo});
+            await Toast.fire({icon: "success", title: "Analyse SEO terminée"});
+        } catch {
+            await Toast.fire({icon: "error", title: "Erreur lors du calcul SEO"});
+        } finally {
+            setCalculatingSeo(false);
+        }
     };
 
     return (
