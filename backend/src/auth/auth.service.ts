@@ -4,12 +4,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../modules/users/users.service';
-import { RegisterDto } from './dto/auth.dto';
+import { ForgotPasswordDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto';
 import { User } from '../modules/users/entities/user.entity';
 import { UserRole } from '../modules/users/entities/userRole.enum';
 import { AccountsService } from '../modules/accounts/accounts.controller';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { MailService } from '../modules/mail/mail.service';
+import { ConfigService } from '@nestjs/config';
 
 export interface OAuthUserPayload {
   provider: string;
@@ -32,6 +38,10 @@ export class AuthService {
     private usersService: UsersService,
     private accountsService: AccountsService,
     private jwtService: JwtService,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    private readonly mailService: MailService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ─── Email / Password ────────────────────────────────────────────────────────
@@ -71,6 +81,49 @@ export class AuthService {
 
   async login(user: User): Promise<User> {
     return user;
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+    const user = await this.usersService.findByEmail(dto.email).catch(() => null);
+
+    if (!user) {
+      return;
+    }
+
+    await this.passwordResetTokenRepository.delete({ userId: user.id });
+
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = hashResetToken(rawToken);
+    const expiresInMinutes = Number(
+      this.configService.get<string>('PASSWORD_RESET_TOKEN_TTL_MINUTES') ?? '60',
+    );
+
+    await this.passwordResetTokenRepository.save({
+      userId: user.id,
+      tokenHash,
+      expiresAt: new Date(Date.now() + expiresInMinutes * 60 * 1000),
+    });
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+    await this.mailService.sendPasswordResetEmail({
+      to: user.email,
+      firstname: user.firstname,
+      resetUrl,
+      expiresInMinutes,
+    });
+  }
+
+  async validatePasswordResetToken(token: string): Promise<void> {
+    await this.getValidPasswordResetToken(token);
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<void> {
+    const resetToken = await this.getValidPasswordResetToken(dto.token);
+
+    await this.usersService.update(resetToken.userId, { password: dto.password });
+    await this.passwordResetTokenRepository.delete({ userId: resetToken.userId });
   }
 
   // ─── OAuth ───────────────────────────────────────────────────────────────────
@@ -133,4 +186,25 @@ export class AuthService {
       lastname: user.lastname,
     });
   }
+
+  private async getValidPasswordResetToken(
+    token: string,
+  ): Promise<PasswordResetToken> {
+    const tokenHash = hashResetToken(token);
+    const resetToken = await this.passwordResetTokenRepository.findOne({
+      where: { tokenHash },
+    });
+
+    if (!resetToken || resetToken.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException(
+        'Le lien de reinitialisation est invalide ou expire.',
+      );
+    }
+
+    return resetToken;
+  }
+}
+
+function hashResetToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
 }

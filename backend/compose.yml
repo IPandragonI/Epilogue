@@ -26,6 +26,13 @@ services:
     depends_on:
       - mysql
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: epilogue-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
   mysql_data:
 

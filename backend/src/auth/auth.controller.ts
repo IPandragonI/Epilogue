@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -12,7 +13,12 @@ import {
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import {
+  RegisterDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 import {
   LocalAuthGuard,
   JwtAuthGuard,
@@ -75,6 +81,37 @@ export class AuthController {
         path: '/',
       })
       .send({ success: true });
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto);
+
+    return {
+      success: true,
+      message:
+        'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.',
+    };
+  }
+
+  @Get('reset-password/validate')
+  async validateResetPasswordToken(@Query('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Token requis');
+    }
+
+    await this.authService.validatePasswordResetToken(token);
+    return { valid: true };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto);
+
+    return {
+      success: true,
+      message: 'Votre mot de passe a ete reinitialise avec succes.',
+    };
   }
 
   // ─── Google OAuth ─────────────────────────────────────────────────────────

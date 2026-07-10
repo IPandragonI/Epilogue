@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { StringValue } from 'ms';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -18,10 +19,13 @@ import { RolesGuard } from './guards/roles.guard';
 
 import { UsersModule } from '../modules/users/users.module';
 import { AccountsModule } from '../modules/accounts/accounts.module';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { MailModule } from '../modules/mail/mail.module';
 
 @Module({
   imports: [
     PassportModule,
+    TypeOrmModule.forFeature([PasswordResetToken]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -33,6 +37,7 @@ import { AccountsModule } from '../modules/accounts/accounts.module';
     }),
     forwardRef(() => UsersModule),
     AccountsModule,
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [
