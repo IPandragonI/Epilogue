@@ -123,11 +123,13 @@ function CreateUserModal({
                               onClose,
                               onCreated,
                               agencies,
+                              lockedAgencyId,
                               apiUrl,
                           }: {
     onClose: () => void;
     onCreated: (user: ManagedUser) => void;
     agencies: Agency[];
+    lockedAgencyId?: string;
     apiUrl: string;
 }) {
     const [form, setForm] = useState({
@@ -135,8 +137,7 @@ function CreateUserModal({
         lastname: "",
         email: "",
         password: "",
-        agencyId: agencies[0]?.id ?? "",
-        role: UserRole.PUBLIC as UserRole,
+        agencyId: lockedAgencyId ?? agencies[0]?.id ?? "",
     });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -158,7 +159,6 @@ function CreateUserModal({
                     lastname: form.lastname,
                     email: form.email,
                     password: form.password,
-                    role: form.role,
                 }),
             });
             if (!res.ok) {
@@ -171,7 +171,7 @@ function CreateUserModal({
             }
             const created = await res.json();
             const agency = agencies.find((a) => a.id === form.agencyId) ?? null;
-            onCreated({ ...created, agency: created.agency ?? agency, role: created.role ?? form.role });
+            onCreated({ ...created, agency: created.agency ?? agency, role: created.role ?? UserRole.PUBLIC });
             onClose();
         } catch (e: any) {
             setError(e?.message || "Erreur réseau");
@@ -242,31 +242,21 @@ function CreateUserModal({
                         />
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-base-content/60 uppercase tracking-wide">Agence</label>
-                        <select
-                            value={form.agencyId}
-                            onChange={(e) => setForm({ ...form, agencyId: e.target.value })}
-                            className="select select-sm border border-base-300 bg-base-100 text-sm w-full"
-                        >
-                            <option value="" disabled>Sélectionner</option>
-                            {agencies.map((a) => (
-                                <option key={a.id} value={a.id}>{a.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-base-content/60 uppercase tracking-wide">Rôle</label>
-                        <select
-                            value={form.role}
-                            onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-                            className="select select-sm border border-base-300 bg-base-100 text-sm w-full"
-                        >
-                            {ROLE_OPTIONS.map((r) => (
-                                <option key={r} value={r}>{r}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {!lockedAgencyId && (
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold text-base-content/60 uppercase tracking-wide">Agence</label>
+                            <select
+                                value={form.agencyId}
+                                onChange={(e) => setForm({ ...form, agencyId: e.target.value })}
+                                className="select select-sm border border-base-300 bg-base-100 text-sm w-full"
+                            >
+                                <option value="" disabled>Sélectionner</option>
+                                {agencies.map((a) => (
+                                    <option key={a.id} value={a.id}>{a.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {error && (
                         <p className="text-xs text-error flex items-center gap-1">
@@ -294,6 +284,7 @@ function UserRow({
                       onSave,
                       onDeleted,
                       isCurrentUser,
+                      isSuperAdmin,
                       apiUrl,
                   }: {
     managedUser: ManagedUser;
@@ -301,6 +292,7 @@ function UserRow({
     onSave: (id: string, data: { firstname: string; lastname: string; agencyId: string; role: UserRole }) => Promise<void>;
     onDeleted: (id: string) => void;
     isCurrentUser: boolean;
+    isSuperAdmin: boolean;
     apiUrl: string;
 }) {
     const [editing, setEditing] = useState(false);
@@ -401,25 +393,29 @@ function UserRow({
                         className="input input-xs w-full sm:w-28 border border-base-300 bg-base-100 text-sm"
                         placeholder="Nom"
                     />
-                    <select
-                        value={agencyId}
-                        onChange={(e) => setAgencyId(e.target.value)}
-                        className="select select-xs w-fullborder border-base-300 bg-base-100 text-sm"
-                    >
-                        <option value="">Aucune agence</option>
-                        {agencies.map((a) => (
-                            <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={role}
-                        onChange={(e) => setRole(e.target.value as UserRole)}
-                        className="select select-xs w-full border border-base-300 bg-base-100 text-sm"
-                    >
-                        {ROLE_OPTIONS.map((r) => (
-                            <option key={r} value={r}>{r}</option>
-                        ))}
-                    </select>
+                    {isSuperAdmin && (
+                        <>
+                            <select
+                                value={agencyId}
+                                onChange={(e) => setAgencyId(e.target.value)}
+                                className="select select-xs w-fullborder border-base-300 bg-base-100 text-sm"
+                            >
+                                <option value="">Aucune agence</option>
+                                {agencies.map((a) => (
+                                    <option key={a.id} value={a.id}>{a.name}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={role}
+                                onChange={(e) => setRole(e.target.value as UserRole)}
+                                className="select select-xs w-full border border-base-300 bg-base-100 text-sm"
+                            >
+                                {ROLE_OPTIONS.map((r) => (
+                                    <option key={r} value={r}>{r}</option>
+                                ))}
+                            </select>
+                        </>
+                    )}
                 </div>
             ) : (
                 <div className="flex-1 min-w-0">
@@ -448,7 +444,7 @@ function UserRow({
                     </>
                 ) : (
                     <>
-                        {!isCurrentUser && (
+                        {isSuperAdmin && !isCurrentUser && (
                             <button
                                 onClick={handleImpersonate}
                                 className="btn btn-xs btn-ghost text-base-content/40 hover:text-base-content/70"
@@ -493,6 +489,8 @@ export default function AdminUsersPage() {
     const [search, setSearch] = useState("");
 
     const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
+    const isAgencyAdmin = user?.role === UserRole.ADMIN;
+    const hasAccess = isSuperAdmin || isAgencyAdmin;
 
     const showToast = (msg: string) => {
         setToast(msg);
@@ -500,29 +498,45 @@ export default function AdminUsersPage() {
     };
 
     useEffect(() => {
-        if (loading || !user || !isSuperAdmin) return;
+        if (loading || !user || !hasAccess) return;
         let mounted = true;
 
         const fetchData = async () => {
             setUsersLoading(true);
             try {
-                const [agRes, usersRes] = await Promise.all([
-                    fetch(`${apiUrl}/agency`, { method: "GET", credentials: "include" }),
-                    fetch(`${apiUrl}/users`, { method: "GET", credentials: "include" }),
-                ]);
+                if (isSuperAdmin) {
+                    const [agRes, usersRes] = await Promise.all([
+                        fetch(`${apiUrl}/agency`, { method: "GET", credentials: "include" }),
+                        fetch(`${apiUrl}/users`, { method: "GET", credentials: "include" }),
+                    ]);
 
-                if (agRes.ok) {
-                    const agData = await agRes.json();
-                    const agList: Agency[] = Array.isArray(agData) ? agData : agData?.agencies ?? agData?.data ?? [];
-                    if (mounted) setAgencies(agList);
-                }
+                    if (agRes.ok) {
+                        const agData = await agRes.json();
+                        const agList: Agency[] = Array.isArray(agData) ? agData : agData?.agencies ?? agData?.data ?? [];
+                        if (mounted) setAgencies(agList);
+                    }
 
-                if (usersRes.ok) {
-                    const usersData = await usersRes.json();
-                    const usersList: ManagedUser[] = Array.isArray(usersData)
-                        ? usersData
-                        : usersData?.users ?? usersData?.data ?? [];
-                    if (mounted) setUsers(usersList);
+                    if (usersRes.ok) {
+                        const usersData = await usersRes.json();
+                        const usersList: ManagedUser[] = Array.isArray(usersData)
+                            ? usersData
+                            : usersData?.users ?? usersData?.data ?? [];
+                        if (mounted) setUsers(usersList);
+                    }
+                } else if (user.agency?.id) {
+                    // Regular agency admin: only see/manage their own agency's users
+                    if (mounted) setAgencies([user.agency]);
+                    const usersRes = await fetch(`${apiUrl}/agency/${user.agency.id}/users`, {
+                        method: "GET",
+                        credentials: "include",
+                    });
+                    if (usersRes.ok) {
+                        const usersData = await usersRes.json();
+                        const usersList: ManagedUser[] = Array.isArray(usersData)
+                            ? usersData
+                            : usersData?.users ?? usersData?.data ?? [];
+                        if (mounted) setUsers(usersList.map((u) => ({ ...u, agency: u.agency ?? user.agency })));
+                    }
                 }
             } catch (e) {
                 console.warn("Failed to fetch users/agencies", e);
@@ -535,7 +549,7 @@ export default function AdminUsersPage() {
         return () => {
             mounted = false;
         };
-    }, [user, loading, isSuperAdmin, apiUrl]);
+    }, [user, loading, hasAccess, isSuperAdmin, apiUrl]);
 
     const filteredUsers = useMemo(() => {
         return users.filter((u) => {
@@ -565,7 +579,7 @@ export default function AdminUsersPage() {
         );
     }
 
-    if (!isSuperAdmin) {
+    if (!hasAccess) {
         return (
             <div className="flex flex-col items-center justify-center gap-3 min-h-60 max-w-md mx-auto text-center py-10">
                 <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600">
@@ -573,7 +587,7 @@ export default function AdminUsersPage() {
                 </div>
                 <h1 className="text-lg font-bold text-base-content">Accès restreint</h1>
                 <p className="text-sm text-base-content/50">
-                    Cette page est réservée aux super administrateurs.
+                    Cette page est réservée aux administrateurs.
                 </p>
             </div>
         );
@@ -637,13 +651,15 @@ export default function AdminUsersPage() {
             <div>
                 <h1 className="text-2xl font-bold text-base-content">Gestion des utilisateurs</h1>
                 <p className="text-sm text-base-content/50 mt-1">
-                    Retrouvez, filtrez et gérez tous les utilisateurs de la plateforme
+                    {isSuperAdmin
+                        ? "Retrouvez, filtrez et gérez tous les utilisateurs de la plateforme"
+                        : "Gérez les membres de votre agence"}
                 </p>
             </div>
 
             <Section
                 title="Utilisateurs"
-                subtitle="Tous les comptes, toutes agences confondues"
+                subtitle={isSuperAdmin ? "Tous les comptes, toutes agences confondues" : (agencies[0]?.name ?? "Votre agence")}
                 icon={<Users size={15} strokeWidth={1.8} />}
                 actions={
                     <button
@@ -670,19 +686,21 @@ export default function AdminUsersPage() {
                                 className="input input-sm w-full pl-8 border border-base-300 bg-base-100 text-sm"
                             />
                         </div>
-                        <div className="relative sm:w-56">
-                            <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30 pointer-events-none z-10" />
-                            <select
-                                value={agencyFilter}
-                                onChange={(e) => setAgencyFilter(e.target.value)}
-                                className="select select-sm w-full pl-8 border border-base-300 bg-base-100 text-sm"
-                            >
-                                <option value="all">Toutes les agences</option>
-                                {agencies.map((a) => (
-                                    <option key={a.id} value={a.id}>{a.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {isSuperAdmin && (
+                            <div className="relative sm:w-56">
+                                <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/30 pointer-events-none z-10" />
+                                <select
+                                    value={agencyFilter}
+                                    onChange={(e) => setAgencyFilter(e.target.value)}
+                                    className="select select-sm w-full pl-8 border border-base-300 bg-base-100 text-sm"
+                                >
+                                    <option value="all">Toutes les agences</option>
+                                    {agencies.map((a) => (
+                                        <option key={a.id} value={a.id}>{a.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-base-content/50">
@@ -714,6 +732,7 @@ export default function AdminUsersPage() {
                                     onSave={handleUpdateUser}
                                     onDeleted={handleUserDeleted}
                                     isCurrentUser={managedUser.id === user.id}
+                                    isSuperAdmin={isSuperAdmin}
                                     apiUrl={apiUrl}
                                 />
                             ))}
@@ -727,6 +746,7 @@ export default function AdminUsersPage() {
                     onClose={() => setShowCreateModal(false)}
                     onCreated={handleUserCreated}
                     agencies={agencies}
+                    lockedAgencyId={isSuperAdmin ? undefined : user.agency?.id}
                     apiUrl={apiUrl}
                 />
             )}

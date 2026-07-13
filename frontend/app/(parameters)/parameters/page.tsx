@@ -13,13 +13,6 @@ import {
     CheckCircle2,
     ExternalLink,
     AlertCircle,
-    Building2,
-    Users,
-    Pencil,
-    Plus,
-    X,
-    Check,
-    Trash,
     ImageIcon,
 } from "lucide-react";
 import UserAvatar from "@/app/components/app/UserAvatar";
@@ -49,15 +42,6 @@ interface SavedExists {
     notionKey: boolean;
     databaseUrl: boolean;
     workspaceUrl: boolean;
-}
-
-interface AgencyUser {
-    id: string;
-    firstname: string;
-    lastname: string;
-    email: string;
-    role: UserRole;
-    avatarUrl: string;
 }
 
 // ── Initial data ───────────────────────────────────────────────────────────
@@ -107,6 +91,7 @@ function RoleBadge({ role }: { role: UserRole }) {
     const styles: Record<UserRole, string> = {
         [UserRole.ADMIN]: "bg-purple-100 text-purple-700 border-purple-200",
         [UserRole.PUBLIC]: "bg-blue-100 text-blue-700 border-blue-200",
+        [UserRole.SUPER_ADMIN]: "bg-green-100 text-green-700 border-green-200",
     };
     return (
         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${styles[role]}`}>
@@ -195,298 +180,6 @@ function Toast({ message }: { message: string }) {
     );
 }
 
-function AgencyUserRow({
-                           agencyUser,
-                           onSave,
-                           isCurrentUser,
-                       }: {
-    agencyUser: AgencyUser;
-    onSave: (id: string, data: { firstname: string; lastname: string }) => Promise<void>;
-    isCurrentUser: boolean;
-}) {
-    const [editing, setEditing] = useState(false);
-    const [firstname, setFirstname] = useState(agencyUser.firstname);
-    const [lastname, setLastname] = useState(agencyUser.lastname);
-    const [saving, setSaving] = useState(false);
-    const [toast, setToast] = useState<string | null>(null);
-
-    const handleSave = async () => {
-        setSaving(true);
-        await onSave(agencyUser.id, { firstname, lastname });
-        setSaving(false);
-        setEditing(false);
-    };
-
-    const handleCancel = () => {
-        setFirstname(agencyUser.firstname);
-        setLastname(agencyUser.lastname);
-        setEditing(false);
-    };
-
-    const showToast = (msg: string) => {
-        setToast(msg);
-        setTimeout(() => setToast(null), 3000);
-    };
-
-    const handleDeleteUser = async (id: string) => {
-        try {
-            Swal.fire({
-                title: "Êtes-vous sûr ?",
-                text: "Cette action est irréversible.",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#d33",
-                cancelButtonColor: "#3085d6",
-                confirmButtonText: "Oui, supprimer !",
-                cancelButtonText: "Annuler"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
-                        method: "DELETE",
-                        credentials: "include"
-                    }).then((res) => {
-                        if (res.ok) {
-                            Swal.fire({
-                                title: "Supprimé !",
-                                text: "La ressource a été supprimée.",
-                                icon: "success"
-                            }).then(() => {
-                                window.location.reload();
-                            });
-                        } else {
-                            Swal.fire({
-                                title: "Erreur",
-                                text: "La ressource n'a pas pu être supprimée.",
-                                icon: "error"
-                            });
-                        }
-                    }).catch(() => {
-                        Swal.fire({
-                            title: "Erreur",
-                            text: "La ressource n'a pas pu être supprimée.",
-                            icon: "error"
-                        });
-                    });
-                }
-            });
-        } catch (err) {
-            showToast(err?.message || 'Erreur réseau');
-        }
-    }
-
-    return (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-base-200 bg-base-50 hover:bg-base-100 transition-colors">
-            <UserAvatar
-                avatarUrl={agencyUser.avatarUrl}
-                firstname={agencyUser.firstname}
-                lastname={agencyUser.lastname}
-                size={32}
-            />
-
-            {editing ? (
-                <div className="flex flex-1 items-center gap-2 min-w-0">
-                    <input
-                        type="text"
-                        value={firstname}
-                        onChange={(e) => setFirstname(e.target.value)}
-                        className="input input-xs w-full border border-base-300 bg-base-100 text-sm"
-                        placeholder="Prénom"
-                        autoFocus
-                    />
-                    <input
-                        type="text"
-                        value={lastname}
-                        onChange={(e) => setLastname(e.target.value)}
-                        className="input input-xs w-full border border-base-300 bg-base-100 text-sm"
-                        placeholder="Nom"
-                    />
-                </div>
-            ) : (
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-base-content truncate">
-                        {agencyUser.firstname} {agencyUser.lastname}
-                        {isCurrentUser && (
-                            <span className="ml-2 text-xs font-normal text-base-content/40">(vous)</span>
-                        )}
-                    </p>
-                    <p className="text-xs text-base-content/50 truncate">{agencyUser.email}</p>
-                </div>
-            )}
-            {agencyUser.role !== UserRole.ADMIN ?
-                <div className="flex items-center gap-2 shrink-0">
-                    <RoleBadge role={agencyUser.role} />
-
-                    {editing ? (
-                        <>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="btn btn-xs btn-success gap-1"
-                            >
-                                {saving ? (
-                                    <span className="loading loading-spinner loading-xs" />
-                                ) : (
-                                    <Check size={12} />
-                                )}
-                            </button>
-                            <button onClick={handleCancel} className="btn btn-xs btn-ghost gap-1">
-                                <X size={12} />
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => setEditing(true)}
-                                className="btn btn-xs btn-ghost text-base-content/40 hover:text-base-content/70"
-                                title="Modifier"
-                            >
-                                <Pencil size={13} />
-                            </button>
-
-                            <button
-                                onClick={() => handleDeleteUser(agencyUser.id)}
-                                className="btn btn-xs btn-ghost bg-red-300 text-base-content hover:text-base-content/70"
-                                title="Modifier"
-                            >
-                                <Trash size={13} />
-                            </button>
-                        </>
-                    )}
-                </div> : null }
-        </div>
-    );
-}
-
-// ── Create User Modal ──────────────────────────────────────────────────────
-function CreateUserModal({
-                             onClose,
-                             onCreated,
-                             agencyId,
-                             apiUrl,
-                         }: {
-    onClose: () => void;
-    onCreated: (user: AgencyUser) => void;
-    agencyId: string;
-    apiUrl: string;
-}) {
-    const [form, setForm] = useState({ firstname: "", lastname: "", email: "", password: "" });
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleCreate = async () => {
-        if (!form.firstname || !form.lastname || !form.email || !form.password) {
-            setError("Tous les champs sont requis.");
-            return;
-        }
-        setSaving(true);
-        setError(null);
-        try {
-            const res = await fetch(`${apiUrl}/agency/${agencyId}/user`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(form),
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                const msg = err?.message
-                    ? Array.isArray(err.message) ? err.message.join(", ") : err.message
-                    : `Erreur ${res.status}`;
-                setError(msg);
-                return;
-            }
-            const created = await res.json();
-            onCreated(created);
-            onClose();
-        } catch (e: any) {
-            setError(e?.message || "Erreur réseau");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="bg-base-100 rounded-xl border border-base-300 shadow-xl w-full max-w-sm mx-4">
-                {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-base-300">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
-                            <Plus size={14} />
-                        </div>
-                        <h3 className="text-sm font-bold text-base-content">Nouvel utilisateur</h3>
-                    </div>
-                    <button onClick={onClose} className="btn btn-xs btn-ghost text-base-content/40">
-                        <X size={14} />
-                    </button>
-                </div>
-
-                {/* Body */}
-                <div className="p-5 flex flex-col gap-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold text-base-content/60 uppercase tracking-wide">Prénom</label>
-                            <input
-                                type="text"
-                                value={form.firstname}
-                                onChange={(e) => setForm({ ...form, firstname: e.target.value })}
-                                className="input input-sm border border-base-300 bg-base-100 text-sm w-full"
-                                placeholder="Jean"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold text-base-content/60 uppercase tracking-wide">Nom</label>
-                            <input
-                                type="text"
-                                value={form.lastname}
-                                onChange={(e) => setForm({ ...form, lastname: e.target.value })}
-                                className="input input-sm border border-base-300 bg-base-100 text-sm w-full"
-                                placeholder="Dupont"
-                            />
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-base-content/60 uppercase tracking-wide">Email</label>
-                        <input
-                            type="email"
-                            value={form.email}
-                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                            className="input input-sm border border-base-300 bg-base-100 text-sm w-full"
-                            placeholder="jean.dupont@exemple.com"
-                        />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-base-content/60 uppercase tracking-wide">Mot de passe</label>
-                        <input
-                            type="password"
-                            value={form.password}
-                            onChange={(e) => setForm({ ...form, password: e.target.value })}
-                            className="input input-sm border border-base-300 bg-base-100 text-sm w-full"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    {error && (
-                        <p className="text-xs text-error flex items-center gap-1">
-                            <AlertCircle size={12} /> {error}
-                        </p>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="flex justify-end gap-2 px-5 pb-5">
-                    <button onClick={onClose} className="btn btn-sm btn-ghost">Annuler</button>
-                    <button onClick={handleCreate} disabled={saving} className="btn btn-sm btn-primary gap-2">
-                        {saving ? <span className="loading loading-spinner loading-xs" /> : <Plus size={14} />}
-                        Créer l'utilisateur
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
     const [profile, setProfile] = useState<ProfileForm>(INITIAL_PROFILE);
@@ -499,12 +192,6 @@ export default function SettingsPage() {
 
     const [savedProfileSnapshot, setSavedProfileSnapshot] = useState<string>(JSON.stringify(INITIAL_PROFILE));
     const [savedNotionSnapshot, setSavedNotionSnapshot] = useState<string>(JSON.stringify(INITIAL_NOTION));
-
-    // Agency state
-    const [agencyName, setAgencyName] = useState<string>("");
-    const [agencyUsers, setAgencyUsers] = useState<AgencyUser[]>([]);
-    const [agencyLoading, setAgencyLoading] = useState(false);
-    const [showCreateModal, setShowCreateModal] = useState(false);
 
     useEffect(() => {
         if (loading) return;
@@ -586,32 +273,6 @@ export default function SettingsPage() {
             }
 
             setTimeout(() => setExists(mappedExists), 0);
-
-            // Fetch agency users
-            const agencyId = serverUser?.agency?.id ?? user?.agency?.id;
-            const agencyDisplayName = serverUser?.agency?.name ?? user?.agency?.name ?? "";
-            if (agencyId && mounted) {
-                setAgencyName(agencyDisplayName);
-                setAgencyLoading(true);
-                try {
-                    const agRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/agency/${agencyId}/users`, {
-                        method: "GET",
-                        credentials: "include",
-                    });
-                    if (agRes.ok) {
-                        const agData = await agRes.json();
-                        // Unwrap possible wrappers
-                        const users: AgencyUser[] = Array.isArray(agData)
-                            ? agData
-                            : agData?.users ?? agData?.data ?? [];
-                        if (mounted) setAgencyUsers(users);
-                    }
-                } catch (e) {
-                    console.warn("Failed to fetch agency users", e);
-                } finally {
-                    if (mounted) setAgencyLoading(false);
-                }
-            }
         };
 
         initFromServer();
@@ -716,37 +377,6 @@ export default function SettingsPage() {
         } catch (err: any) {
             showToast(err?.message || 'Erreur réseau');
         }
-    };
-
-    // ── Agency user update ─────────────────────────────────────────────────
-    const handleUpdateAgencyUser = async (userId: string, data: { firstname: string; lastname: string }) => {
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(data),
-            });
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                const message = err?.message ? (Array.isArray(err.message) ? err.message.join(', ') : err.message) : `Erreur ${res.status}`;
-                showToast(message);
-                return;
-            }
-
-            setAgencyUsers((prev) =>
-                prev.map((u) => (u.id === userId ? { ...u, ...data } : u))
-            );
-            showToast('Utilisateur mis à jour');
-        } catch (err: any) {
-            showToast(err?.message || 'Erreur réseau');
-        }
-    };
-
-    const handleUserCreated = (newUser: AgencyUser) => {
-        setAgencyUsers((prev) => [...prev, newUser]);
-        showToast('Utilisateur créé avec succès');
     };
 
     return (
@@ -984,70 +614,6 @@ export default function SettingsPage() {
                     </div>
                 </Section>
             </form>
-
-            {/* ── Agency section ── */}
-            <Section
-                title={agencyName ? `Agence · ${agencyName}` : "Agence"}
-                subtitle="Membres rattachés à votre agence"
-                icon={<Building2 size={15} strokeWidth={1.8} />}
-            >
-                <div className="flex flex-col gap-4">
-
-                    {/* Header row */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-base-content/50">
-                            <Users size={13} />
-                            <span>
-                                {agencyLoading
-                                    ? "Chargement…"
-                                    : `${agencyUsers.length} utilisateur${agencyUsers.length !== 1 ? "s" : ""}`}
-                            </span>
-                        </div>
-                        {user.role === UserRole.ADMIN && (
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                className="btn btn-xs btn-primary gap-1.5"
-                            >
-                                <Plus size={13} />
-                                Nouvel utilisateur
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Users list */}
-                    {agencyLoading ? (
-                        <div className="flex justify-center py-6">
-                            <span className="loading loading-spinner loading-sm text-base-content/30" />
-                        </div>
-                    ) : agencyUsers.length === 0 ? (
-                        <div className="flex flex-col items-center gap-2 py-8 text-base-content/30">
-                            <Users size={28} strokeWidth={1.2} />
-                            <p className="text-xs">Aucun utilisateur dans cette agence</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-2">
-                            {agencyUsers.map((agencyUser) => (
-                                <AgencyUserRow
-                                    key={agencyUser.id}
-                                    agencyUser={agencyUser}
-                                    onSave={handleUpdateAgencyUser}
-                                    isCurrentUser={agencyUser.id === user.id}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </Section>
-
-            {/* Create user modal */}
-            {showCreateModal && (
-                <CreateUserModal
-                    onClose={() => setShowCreateModal(false)}
-                    onCreated={handleUserCreated}
-                    agencyId={user.agency?.id}
-                    apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
-                />
-            )}
 
             {/* Toast notification */}
             {toast && <Toast message={toast} />}

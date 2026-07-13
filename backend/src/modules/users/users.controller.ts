@@ -69,10 +69,18 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @CurrentUser() currentUser: { id: string; role: UserRole },
+    @CurrentUser()
+    currentUser: { id: string; role: UserRole; agency: { id: string } | null },
   ) {
-    this.assertSelfOrAdmin(id, currentUser);
-    return await this.usersService.update(id, updateUserDto);
+    await this.assertCanManageUser(id, currentUser, { allowSelf: true });
+
+    const dto = { ...updateUserDto };
+    if (currentUser.role !== UserRole.SUPER_ADMIN) {
+      delete dto.role;
+      delete dto.agencyId;
+    }
+
+    return await this.usersService.update(id, dto);
   }
 
   @Get(':id/curation-items')
@@ -100,7 +108,8 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   async remove(
     @Param('id') id: string,
-    @CurrentUser() currentUser: { id: string; role: UserRole },
+    @CurrentUser()
+    currentUser: { id: string; role: UserRole; agency: { id: string } | null },
   ) {
     if (
       currentUser.role !== UserRole.ADMIN &&
@@ -110,6 +119,7 @@ export class UsersController {
         'Vous n’avez pas les droits pour supprimer cet utilisateur.',
       );
     }
+    await this.assertCanManageUser(id, currentUser);
     return await this.usersService.remove(id);
   }
 
@@ -124,6 +134,32 @@ export class UsersController {
     if (currentUser.id !== targetId && !isAdmin) {
       throw new ForbiddenException(
         "Vous n'avez pas accès à cette ressource.",
+      );
+    }
+  }
+
+  // Regular ADMIN can only manage (edit/delete) users within their own
+  // agency; SUPER_ADMIN can manage anyone. `allowSelf` lets a user always
+  // edit their own profile regardless of role.
+  private async assertCanManageUser(
+    targetId: string,
+    currentUser: { id: string; role: UserRole; agency: { id: string } | null },
+    options: { allowSelf?: boolean } = {},
+  ) {
+    if (options.allowSelf && currentUser.id === targetId) return;
+
+    if (currentUser.role === UserRole.SUPER_ADMIN) return;
+
+    if (currentUser.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        "Vous n'avez pas accès à cette ressource.",
+      );
+    }
+
+    const target = await this.usersService.findOne(targetId);
+    if (target.agencyId !== currentUser.agency?.id) {
+      throw new ForbiddenException(
+        'Vous ne pouvez gérer que les utilisateurs de votre agence.',
       );
     }
   }

@@ -37,6 +37,8 @@ function AdminCard({
 function AdminHomeContent() {
     const { user, loading } = useAuth();
     const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
+    const isAgencyAdmin = user?.role === UserRole.ADMIN;
+    const hasAccess = isSuperAdmin || isAgencyAdmin;
 
     if (loading) {
         return (
@@ -54,7 +56,7 @@ function AdminHomeContent() {
         );
     }
 
-    if (!isSuperAdmin) {
+    if (!hasAccess) {
         return (
             <div className="flex flex-col items-center justify-center gap-3 min-h-60 max-w-md mx-auto text-center py-10">
                 <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600">
@@ -62,7 +64,7 @@ function AdminHomeContent() {
                 </div>
                 <h1 className="text-lg font-bold text-base-content">Accès restreint</h1>
                 <p className="text-sm text-base-content/50">
-                    Cette page est réservée aux super administrateurs.
+                    Cette page est réservée aux administrateurs.
                 </p>
             </div>
         );
@@ -73,22 +75,26 @@ function AdminHomeContent() {
             <div>
                 <h1 className="text-2xl font-bold text-base-content">Administration</h1>
                 <p className="text-sm text-base-content/50 mt-1">
-                    Gestion globale de la plateforme
+                    {isSuperAdmin ? "Gestion globale de la plateforme" : "Gestion de votre agence"}
                 </p>
             </div>
 
             <div className="flex flex-col gap-3">
-                <AdminCard
-                    href="/admin/agencies"
-                    icon={<Building2 size={18} strokeWidth={1.8} />}
-                    title="Entreprises"
-                    description="Créer, renommer, supprimer des entreprises et gérer leur abonnement"
-                />
+                {isSuperAdmin && (
+                    <AdminCard
+                        href="/admin/agencies"
+                        icon={<Building2 size={18} strokeWidth={1.8} />}
+                        title="Entreprises"
+                        description="Créer, renommer, supprimer des entreprises et gérer leur abonnement"
+                    />
+                )}
                 <AdminCard
                     href="/admin/users"
                     icon={<Users size={18} strokeWidth={1.8} />}
                     title="Utilisateurs"
-                    description="Gérer les comptes, rôles, et se connecter en tant qu'un utilisateur"
+                    description={isSuperAdmin
+                        ? "Gérer les comptes, rôles, et se connecter en tant qu'un utilisateur"
+                        : "Gérer les membres de votre agence"}
                 />
             </div>
         </div>

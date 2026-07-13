@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import Image from "next/image";
@@ -66,16 +66,18 @@ const NAV_ITEMS: NavItem[] = [
     },
 ];
 
-const ADMIN_NAV_ITEM: NavItem = {
-    type: "group",
-    label: "Administration",
-    icon: <ShieldCheck size={18}/>,
-    children: [
-        {label: "Vue d'ensemble", href: "/admin"},
-        {label: "Entreprises", href: "/admin/agencies"},
-        {label: "Utilisateurs", href: "/admin/users"},
-    ],
-};
+function buildAdminNavItem(isSuperAdmin: boolean): NavItem {
+    return {
+        type: "group",
+        label: "Administration",
+        icon: <ShieldCheck size={18}/>,
+        children: [
+            {label: "Vue d'ensemble", href: "/admin"},
+            ...(isSuperAdmin ? [{label: "Entreprises", href: "/admin/agencies"}] : []),
+            {label: "Utilisateurs", href: "/admin/users"},
+        ],
+    };
+}
 
 const BOTTOM_ITEMS = [
     {label: "Abonnement", href: "/pricing", icon: <CreditCard size={18}/>,},
@@ -110,9 +112,9 @@ function NavGroup({item, isOpen}: {
             <button
                 onClick={() => setOpen((v) => !v)}
                 className={
-                    `flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left transition-colors 
+                    `flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left transition-colors
                     ${isActiveGroup
-                        ? "text-base-content font-semibold"
+                        ? "text-accent font-semibold"
                         : "text-base-content/70 hover:bg-base-200 hover:text-base-content"}`}
             >
                 <span className="shrink-0">{item.icon}</span>
@@ -131,7 +133,7 @@ function NavGroup({item, isOpen}: {
                                 href={child.href}
                                 className={`block px-3 py-1.5 rounded-lg text-sm transition-colors
                                     ${pathname === child.href
-                                    ? "text-base-content font-medium"
+                                    ? "text-accent font-semibold"
                                     : "text-base-content/50 hover:text-base-content hover:bg-base-200"}
                                 `}
                             >
@@ -172,8 +174,10 @@ function NavLink({item, isOpen}: {
 
 export default function Sidebar({isOpen}: { isOpen: boolean }) {
     const {user} = useAuth();
-    const navItems = user?.role === UserRole.SUPER_ADMIN
-        ? [...NAV_ITEMS, ADMIN_NAV_ITEM]
+    const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
+    const isAgencyAdmin = user?.role === UserRole.ADMIN;
+    const navItems = isSuperAdmin || isAgencyAdmin
+        ? [...NAV_ITEMS, buildAdminNavItem(isSuperAdmin)]
         : NAV_ITEMS;
 
     return (
