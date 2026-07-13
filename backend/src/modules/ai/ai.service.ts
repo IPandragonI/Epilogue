@@ -2,7 +2,6 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common';
 import { AI_PROVIDER } from './ai.provider';
 import * as aiProviderInterface from './interfaces/ai-provider.interface';
@@ -114,17 +113,16 @@ export class AIService {
     }
   }
 
-  async analyzeSeo(contentId: string): Promise<{
+  async analyzeSeo(
+    contentId: string,
+    userId: string,
+  ): Promise<{
     score: number;
     keywords: string;
     review: string;
     tokensUsed: number;
   }> {
-    const content = await this.contentService.findOne(contentId);
-
-    if (!content) {
-      throw new NotFoundException(`Contenu ${contentId} introuvable`);
-    }
+    const content = await this.contentService.findOne(contentId, userId);
 
     try {
       const result = await this.provider.analyzeSeo(

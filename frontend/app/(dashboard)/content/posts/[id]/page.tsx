@@ -255,6 +255,7 @@ export default function PostDetailPage() {
             try {
                 const res = await fetch(`${API_URL}/content/${id}`, {
                     cache: "no-store",
+                    credentials: "include",
                 });
 
                 if (!res.ok) {

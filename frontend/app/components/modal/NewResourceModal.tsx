@@ -156,6 +156,7 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: trimmed }),
+                    credentials: 'include',
                 });
 
                 const json = await res.json().catch(() => null);

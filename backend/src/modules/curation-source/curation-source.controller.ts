@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { CurationSourceService } from './curation-source.service';
 import { CreateCurationSourceDto } from './dto/create-curation-source.dto';
 import { UpdateCurationSourceDto } from './dto/update-curation-source.dto';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 
+@UseGuards(JwtAuthGuard)
 @Controller('curation-source')
 export class CurationSourceController {
   constructor(private readonly curationSourceService: CurationSourceService) {}

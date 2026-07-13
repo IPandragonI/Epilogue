@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -12,16 +13,17 @@ import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { UserRole } from './entities/userRole.enum';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guards';
-import { Roles } from 'src/auth/decorators/auth.decorators';
+import { CurrentUser, Roles } from 'src/auth/decorators/auth.decorators';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get()
   @ApiOperation({
     summary: 'Get all users',
@@ -36,7 +38,6 @@ export class UsersController {
     return await this.usersService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({
     summary: 'Get one user by id',
@@ -47,11 +48,14 @@ export class UsersController {
     description: 'User retrieved successfully.',
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
-  async findOneById(@Param('id') id: string) {
+  async findOneById(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: { id: string; role: UserRole },
+  ) {
+    this.assertSelfOrAdmin(id, currentUser);
     return await this.usersService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiOperation({
     summary: 'Update one user',
@@ -62,7 +66,12 @@ export class UsersController {
     description: 'User updated successfully.',
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() currentUser: { id: string; role: UserRole },
+  ) {
+    this.assertSelfOrAdmin(id, currentUser);
     return await this.usersService.update(id, updateUserDto);
   }
 
@@ -71,7 +80,11 @@ export class UsersController {
     summary: 'Get Curations items for a user',
     description: 'Retrieve the curation items with the user and his id.',
   })
-  async getCurationItemsByUser(@Param('id') id: string) {
+  async getCurationItemsByUser(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: { id: string; role: UserRole },
+  ) {
+    this.assertSelfOrAdmin(id, currentUser);
     return await this.usersService.getCurationItemsByUserId(id);
   }
 
@@ -85,7 +98,33 @@ export class UsersController {
     description: 'User deleted successfully.',
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
-  async remove(@Param('id') id: string) {
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: { id: string; role: UserRole },
+  ) {
+    if (
+      currentUser.role !== UserRole.ADMIN &&
+      currentUser.role !== UserRole.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException(
+        'Vous n’avez pas les droits pour supprimer cet utilisateur.',
+      );
+    }
     return await this.usersService.remove(id);
+  }
+
+  private assertSelfOrAdmin(
+    targetId: string,
+    currentUser: { id: string; role: UserRole },
+  ) {
+    const isAdmin =
+      currentUser.role === UserRole.ADMIN ||
+      currentUser.role === UserRole.SUPER_ADMIN;
+
+    if (currentUser.id !== targetId && !isAdmin) {
+      throw new ForbiddenException(
+        "Vous n'avez pas accès à cette ressource.",
+      );
+    }
   }
 }

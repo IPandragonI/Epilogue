@@ -44,7 +44,7 @@ export default function StatCards() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/stats`)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/stats`, { credentials: "include" })
             .then((r) => (r.ok ? r.json() : null))
             .then(setStats)
             .catch(() => setStats(null))

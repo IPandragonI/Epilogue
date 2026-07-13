@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCurationItemDto } from './dto/create-curation-item.dto';
 import { UpdateCurationItemDto } from './dto/update-curation-item.dto';
 import { In, Repository } from 'typeorm';
@@ -15,7 +15,7 @@ export class CurationItemService {
     private curationSourceRepository: Repository<CurationSource>,
   ) {}
 
-  async create(createCurationItemDto: CreateCurationItemDto) {
+  async create(createCurationItemDto: CreateCurationItemDto, userId: string) {
     const sourceSaved = await this.curationSourceRepository.save(
       createCurationItemDto.source,
     );
@@ -23,7 +23,7 @@ export class CurationItemService {
     const toSave: any = {
       title: String(createCurationItemDto.title),
       summary: String(createCurationItemDto.summary),
-      user: { id: String(createCurationItemDto.userId) },
+      user: { id: userId },
       source: sourceSaved,
     };
 
@@ -46,25 +46,34 @@ export class CurationItemService {
     });
   }
 
-  findAll() {
-    return this.curationItemRepository.find({
-      relations: ['source', 'user'],
-      order: { source: { createdAt: 'DESC' } },
-    });
-  }
-
-  findOne(id: string) {
-    return this.curationItemRepository.findOne({
-      where: { id },
+  async findOne(id: string, userId: string) {
+    const item = await this.curationItemRepository.findOne({
+      where: { id, user: { id: userId } },
       relations: ['source', 'user'],
     });
+
+    if (!item) {
+      throw new NotFoundException(`Curation item with id ${id} not found`);
+    }
+
+    return item;
   }
 
-  update(id: string, updateCurationItemDto: UpdateCurationItemDto) {
-    return this.curationItemRepository.update(id, updateCurationItemDto);
+  async update(
+    id: string,
+    updateCurationItemDto: UpdateCurationItemDto,
+    userId: string,
+  ) {
+    await this.findOne(id, userId);
+    const { title, summary } = updateCurationItemDto;
+    return this.curationItemRepository.update(
+      { id, user: { id: userId } },
+      { title, summary },
+    );
   }
 
-  remove(id: string) {
-    return this.curationItemRepository.delete(id);
+  async remove(id: string, userId: string) {
+    await this.findOne(id, userId);
+    return this.curationItemRepository.delete({ id, user: { id: userId } });
   }
 }

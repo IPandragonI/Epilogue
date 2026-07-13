@@ -20,46 +20,55 @@ import {
   SubscriptionFeature,
   SubscriptionFeatureEnum,
 } from '../../auth/decorators/subscription.decorator';
+import { CurrentUser } from '../../auth/decorators/auth.decorators';
 import { FastifyRequest } from 'fastify';
 
+@UseGuards(JwtAuthGuard)
 @Controller('curation-item')
 export class CurationItemController {
   constructor(private readonly curationItemService: CurationItemService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @UseGuards(SubscriptionGuard)
   @UseInterceptors(UsageTrackingInterceptor)
   @SubscriptionFeature(SubscriptionFeatureEnum.CURATION)
-  create(@Body() createCurationItemDto: CreateCurationItemDto) {
-    return this.curationItemService.create(createCurationItemDto);
+  create(
+    @Body() createCurationItemDto: CreateCurationItemDto,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.curationItemService.create(createCurationItemDto, user.id);
   }
 
   @Get('mine')
-  @UseGuards(JwtAuthGuard)
   findMine(@Req() req: FastifyRequest & { user: { id: string } }) {
     return this.curationItemService.findAllByUser(req.user.id);
   }
 
   @Get()
-  findAll() {
-    return this.curationItemService.findAll();
+  findAll(@CurrentUser() user: { id: string }) {
+    return this.curationItemService.findAllByUser(user.id);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.curationItemService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.curationItemService.findOne(id, user.id);
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
     @Body() updateCurationItemDto: UpdateCurationItemDto,
+    @CurrentUser() user: { id: string },
   ) {
-    return this.curationItemService.update(id, updateCurationItemDto);
+    return this.curationItemService.update(
+      id,
+      updateCurationItemDto,
+      user.id,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.curationItemService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: { id: string }) {
+    return this.curationItemService.remove(id, user.id);
   }
 }

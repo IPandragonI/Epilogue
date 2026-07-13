@@ -34,6 +34,10 @@ export class AIController {
   constructor(private readonly aiService: AIService) {}
 
   @Post('generate')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @UseInterceptors(UsageTrackingInterceptor)
+  @SubscriptionFeature(SubscriptionFeatureEnum.TOKEN)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Générer du texte',
     description: 'Envoie un prompt au modèle IA et retourne le texte généré.',
@@ -46,6 +50,10 @@ export class AIController {
   }
 
   @Post('generate-from-website')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @UseInterceptors(UsageTrackingInterceptor)
+  @SubscriptionFeature(SubscriptionFeatureEnum.TOKEN)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Analyser une page web',
     description:
@@ -86,6 +94,10 @@ export class AIController {
   }
 
   @Post('upload')
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @UseInterceptors(UsageTrackingInterceptor)
+  @SubscriptionFeature(SubscriptionFeatureEnum.TOKEN)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Analyser un document',
     description:
@@ -208,9 +220,13 @@ export class AIController {
   @ApiOperation({ summary: "Analyse SEO d'un contenu existant" })
   async analyzeSeo(
     @Param('contentId') contentId: string,
-    @Req() req: FastifyRequest & { usageAmounts?: Record<string, number> },
+    @Req()
+    req: FastifyRequest & {
+      user: { id: string };
+      usageAmounts?: Record<string, number>;
+    },
   ) {
-    const result = await this.aiService.analyzeSeo(contentId);
+    const result = await this.aiService.analyzeSeo(contentId, req.user.id);
 
     req.usageAmounts = { [SubscriptionFeatureEnum.TOKEN]: result.tokensUsed };
 

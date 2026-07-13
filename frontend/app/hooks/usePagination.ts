@@ -34,7 +34,7 @@ export function usePagination<T>({url, limit = 5, query}: UsePaginationOptions):
         setError(null);
         try {
             const params = new URLSearchParams({page: String(currentPage), limit: String(limit), ...query});
-            const response = await fetch(`${url}?${params.toString()}`);
+            const response = await fetch(`${url}?${params.toString()}`, {credentials: "include"});
             if (!response.ok) throw new Error("Erreur serveur");
             const result = await response.json();
             setData(result.data);

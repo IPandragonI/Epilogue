@@ -48,7 +48,7 @@ export class ContentNotionService {
     }
 
     const content = await this.contentRepository.findOne({
-      where: { id: contentId },
+      where: { id: contentId, userId },
       relations: ['notion'],
     });
 
@@ -106,7 +106,11 @@ export class ContentNotionService {
     }
   }
 
-  findAll() {
-    return this.contentNotionRepository.find();
+  findAll(userId: string) {
+    return this.contentNotionRepository
+      .createQueryBuilder('contentNotion')
+      .innerJoin('contentNotion.content', 'content')
+      .where('content.userId = :userId', { userId })
+      .getMany();
   }
 }

@@ -16,26 +16,31 @@ export class ContentService {
     private readonly contentSeoService: ContentSeoService,
   ) {}
 
-  create(createContentDto: CreateContentDto) {
-    return this.contentRepository.save(createContentDto);
+  create(createContentDto: CreateContentDto, userId: string) {
+    return this.contentRepository.save({ ...createContentDto, userId });
   }
 
-  findAll() {
-    return this.contentRepository.find();
+  findAll(userId: string) {
+    return this.contentRepository.find({ where: { userId } });
   }
 
-  findAllWithSEO() {
-    return this.contentRepository.find({ relations: ['seo'] });
-  }
-
-  findAllWithNotion() {
+  findAllWithSEO(userId: string) {
     return this.contentRepository.find({
+      where: { userId },
+      relations: ['seo'],
+    });
+  }
+
+  findAllWithNotion(userId: string) {
+    return this.contentRepository.find({
+      where: { userId },
       relations: ['notion'],
       order: { createdAt: 'DESC' },
     });
   }
 
   async findAllWithSeoPaginated(
+    userId: string,
     page: number = 1,
     limit: number = 10,
     status?: ContentStatusEnum,
@@ -43,7 +48,7 @@ export class ContentService {
     const skip = (page - 1) * limit;
 
     const [data, total] = await this.contentRepository.findAndCount({
-      where: { status: status ?? Not(ContentStatusEnum.ARCHIVED) },
+      where: { userId, status: status ?? Not(ContentStatusEnum.ARCHIVED) },
       relations: ['seo'],
       order: { createdAt: 'DESC' },
       take: limit,
@@ -61,14 +66,20 @@ export class ContentService {
     };
   }
 
-  findOne(id: string) {
-    return this.contentRepository.findOne({
-      where: { id },
+  async findOne(id: string, userId: string) {
+    const content = await this.contentRepository.findOne({
+      where: { id, userId },
       relations: ['seo', 'notion'],
     });
+
+    if (!content) {
+      throw new NotFoundException(`Content with id ${id} not found`);
+    }
+
+    return content;
   }
 
-  async getStats() {
+  async getStats(userId: string) {
     const [
       total,
       published,
@@ -78,29 +89,31 @@ export class ContentService {
       byPlatformRaw,
       avgSeoRaw,
     ] = await Promise.all([
-      this.contentRepository.count(),
+      this.contentRepository.count({ where: { userId } }),
       this.contentRepository.count({
-        where: { status: ContentStatusEnum.PUBLISHED },
+        where: { userId, status: ContentStatusEnum.PUBLISHED },
       }),
       this.contentRepository.count({
-        where: { status: ContentStatusEnum.DRAFT },
+        where: { userId, status: ContentStatusEnum.DRAFT },
       }),
       this.contentRepository.count({
-        where: { status: ContentStatusEnum.WAITING_PUBLISH },
+        where: { userId, status: ContentStatusEnum.WAITING_PUBLISH },
       }),
       this.contentRepository.count({
-        where: { status: ContentStatusEnum.ARCHIVED },
+        where: { userId, status: ContentStatusEnum.ARCHIVED },
       }),
       this.contentRepository
         .createQueryBuilder('c')
         .select('c.contentPlatform', 'platform')
         .addSelect('COUNT(*)', 'count')
+        .where('c.userId = :userId', { userId })
         .groupBy('c.contentPlatform')
         .getRawMany<{ platform: string; count: string }>(),
       this.contentRepository
         .createQueryBuilder('c')
         .leftJoin('c.seo', 'seo')
         .select('AVG(seo.score)', 'avg')
+        .where('c.userId = :userId', { userId })
         .getRawOne<{ avg: string | null }>(),
     ]);
 
@@ -143,14 +156,16 @@ export class ContentService {
       await this.contentRepository.save(content);
     }
 
-    return this.findOne(contentId) as Promise<Content>;
+    return this.findOne(contentId, content.userId as string);
   }
 
-  update(id: string, updateContentDto: UpdateContentDto) {
-    return this.contentRepository.update(id, updateContentDto);
+  async update(id: string, updateContentDto: UpdateContentDto, userId: string) {
+    await this.findOne(id, userId);
+    return this.contentRepository.update({ id, userId }, updateContentDto);
   }
 
-  remove(id: string) {
-    return this.contentRepository.delete(id);
+  async remove(id: string, userId: string) {
+    await this.findOne(id, userId);
+    return this.contentRepository.delete({ id, userId });
   }
 }
