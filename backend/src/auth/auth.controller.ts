@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   Req,
@@ -23,8 +24,10 @@ import {
   LocalAuthGuard,
   JwtAuthGuard,
 } from './guards/auth.guards';
-import { CurrentUser } from './decorators/auth.decorators';
+import { RolesGuard } from './guards/roles.guard';
+import { CurrentUser, Roles } from './decorators/auth.decorators';
 import { User } from '../modules/users/entities/user.entity';
+import { UserRole } from '../modules/users/entities/userRole.enum';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 @ApiTags('auth')
@@ -62,6 +65,28 @@ export class AuthController {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const token = this.authService.generateJwt(user);
+
+    return reply
+      .setCookie('access_token', token, {
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      })
+      .send({ success: true });
+  }
+
+  @Post('impersonate/:userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Se connecter en tant qu'un autre utilisateur (super admin)" })
+  async impersonate(
+    @Param('userId') userId: string,
+    @Res() reply: FastifyReply,
+  ) {
+    const user = await this.authService.impersonate(userId);
     const token = this.authService.generateJwt(user);
 
     return reply

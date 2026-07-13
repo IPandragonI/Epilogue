@@ -14,7 +14,10 @@ import {
     CreditCard,
     CalendarDays,
     Cloud,
+    ShieldCheck,
 } from "lucide-react";
+import {useAuth} from "@/app/hooks/useAuth";
+import {UserRole} from "@/app/types/types";
 
 type NavChild = { label: string; href: string };
 
@@ -62,6 +65,17 @@ const NAV_ITEMS: NavItem[] = [
         icon: <CalendarDays size={18}/>,
     },
 ];
+
+const ADMIN_NAV_ITEM: NavItem = {
+    type: "group",
+    label: "Administration",
+    icon: <ShieldCheck size={18}/>,
+    children: [
+        {label: "Vue d'ensemble", href: "/admin"},
+        {label: "Entreprises", href: "/admin/agencies"},
+        {label: "Utilisateurs", href: "/admin/users"},
+    ],
+};
 
 const BOTTOM_ITEMS = [
     {label: "Abonnement", href: "/pricing", icon: <CreditCard size={18}/>,},
@@ -157,6 +171,11 @@ function NavLink({item, isOpen}: {
 }
 
 export default function Sidebar({isOpen}: { isOpen: boolean }) {
+    const {user} = useAuth();
+    const navItems = user?.role === UserRole.SUPER_ADMIN
+        ? [...NAV_ITEMS, ADMIN_NAV_ITEM]
+        : NAV_ITEMS;
+
     return (
         <aside
             className={`flex flex-col bg-base-100 border-r border-base-200 shrink-0 transition-all duration-300 ease-in-out overflow-hidden
@@ -173,7 +192,7 @@ export default function Sidebar({isOpen}: { isOpen: boolean }) {
 
             <nav className="flex-1 px-2 py-4 overflow-y-auto">
                 <ul className="flex flex-col gap-0.5">
-                    {NAV_ITEMS.map((item, i) =>
+                    {navItems.map((item, i) =>
                         item.type === "link" ? (
                             <NavLink key={i} item={item} isOpen={isOpen}/>
                         ) : (

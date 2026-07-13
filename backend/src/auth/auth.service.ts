@@ -83,6 +83,10 @@ export class AuthService {
     return user;
   }
 
+  async impersonate(targetUserId: string): Promise<User> {
+    return this.usersService.findOne(targetUserId);
+  }
+
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
     const user = await this.usersService.findByEmail(dto.email).catch(() => null);
 

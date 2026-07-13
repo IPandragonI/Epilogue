@@ -32,7 +32,7 @@ export class AgencySubscriptionController {
 
   @Get('agency/:agencyId/history')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: "Historique des abonnements d'une agence (admin)" })
   findHistory(@Param('agencyId') agencyId: string) {
     return this.service.findAllByAgency(agencyId);
@@ -40,7 +40,7 @@ export class AgencySubscriptionController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Souscrit à un plan (admin)' })
   subscribe(@Body() dto: CreateAgencySubscriptionDto) {
     return this.service.subscribe(dto);
@@ -48,7 +48,7 @@ export class AgencySubscriptionController {
 
   @Patch('agency/:agencyId/change-plan')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: "Change le plan d'une agence (admin)" })
   changePlan(@Param('agencyId') agencyId: string, @Body() dto: ChangePlanDto) {
     return this.service.changePlan(agencyId, dto.subscriptionPlanId);
@@ -56,7 +56,7 @@ export class AgencySubscriptionController {
 
   @Delete('agency/:agencyId/cancel')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: "Résilie l'abonnement d'une agence (admin)" })
   cancel(@Param('agencyId') agencyId: string) {
     return this.service.cancel(agencyId);

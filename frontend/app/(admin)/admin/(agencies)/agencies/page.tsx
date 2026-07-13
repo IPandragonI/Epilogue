@@ -13,7 +13,7 @@ import {
     ChevronDown,
     AlertCircle,
 } from "lucide-react";
-import { UserRole } from "@/app/types/types";
+import { UserRole, SubscriptionPlan, AgencySubscription } from "@/app/types/types";
 import { useAuth } from "@/app/hooks/useAuth";
 import Swal from "sweetalert2";
 
@@ -202,11 +202,13 @@ function CreateAgencyModal({
 function AgencyRow({
                         agency,
                         apiUrl,
+                        plans,
                         onRenamed,
                         onDeleted,
                     }: {
     agency: Agency;
     apiUrl: string;
+    plans: SubscriptionPlan[];
     onRenamed: (id: string, name: string) => void;
     onDeleted: (id: string) => void;
 }) {
@@ -218,6 +220,12 @@ function AgencyRow({
     const [editing, setEditing] = useState(false);
     const [name, setName] = useState(agency.name);
     const [saving, setSaving] = useState(false);
+
+    const [subscription, setSubscription] = useState<AgencySubscription | null>(null);
+    const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
+    const [loadingSubscription, setLoadingSubscription] = useState(false);
+    const [selectedPlanId, setSelectedPlanId] = useState("");
+    const [assigning, setAssigning] = useState(false);
 
     const loadUsers = async () => {
         if (usersLoaded || loadingUsers) return;
@@ -240,9 +248,57 @@ function AgencyRow({
         }
     };
 
+    const loadSubscription = async () => {
+        if (subscriptionLoaded || loadingSubscription) return;
+        setLoadingSubscription(true);
+        try {
+            const res = await fetch(`${apiUrl}/agency-subscriptions/agency/${agency.id}`, {
+                method: "GET",
+                credentials: "include",
+            });
+            if (res.ok) {
+                const data = await res.json().catch(() => null);
+                setSubscription(data ?? null);
+                setSelectedPlanId(data?.subscriptionPlan?.id ?? "");
+            }
+            setSubscriptionLoaded(true);
+        } catch (e) {
+            console.warn("Failed to fetch agency subscription", e);
+        } finally {
+            setLoadingSubscription(false);
+        }
+    };
+
+    const handleAssignPlan = async () => {
+        if (!selectedPlanId) return;
+        setAssigning(true);
+        try {
+            const res = await fetch(`${apiUrl}/agency-subscriptions`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ agencyId: agency.id, subscriptionPlanId: selectedPlanId }),
+            });
+            if (res.ok) {
+                const created = await res.json();
+                setSubscription(created);
+                Swal.fire({ title: "Plan assigné", icon: "success", timer: 1500, showConfirmButton: false });
+            } else {
+                Swal.fire({ title: "Erreur", text: "L'assignation du plan a échoué.", icon: "error" });
+            }
+        } catch {
+            Swal.fire({ title: "Erreur", text: "Erreur réseau.", icon: "error" });
+        } finally {
+            setAssigning(false);
+        }
+    };
+
     const handleToggle = () => {
         setExpanded((v) => !v);
-        if (!expanded) loadUsers();
+        if (!expanded) {
+            loadUsers();
+            loadSubscription();
+        }
     };
 
     const handleRename = async () => {
@@ -373,29 +429,66 @@ function AgencyRow({
             </div>
 
             {expanded && (
-                <div className="border-t border-base-200 px-4 py-3 bg-base-100">
-                    {loadingUsers ? (
-                        <div className="flex justify-center py-4">
-                            <span className="loading loading-spinner loading-sm text-base-content/30" />
-                        </div>
-                    ) : users.length === 0 ? (
-                        <p className="text-xs text-base-content/40 py-2">Aucun utilisateur dans cette entreprise.</p>
-                    ) : (
-                        <div className="flex flex-col gap-1.5">
-                            {users.map((u) => (
-                                <div key={u.id} className="flex items-center gap-2.5 px-1 py-1">
-                                    <UserAvatar firstname={u.firstname} lastname={u.lastname} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-base-content truncate">
-                                            {u.firstname} {u.lastname}
-                                        </p>
-                                        <p className="text-[11px] text-base-content/50 truncate">{u.email}</p>
+                <div className="border-t border-base-200 px-4 py-3 bg-base-100 flex flex-col gap-4">
+                    <div>
+                        {loadingUsers ? (
+                            <div className="flex justify-center py-4">
+                                <span className="loading loading-spinner loading-sm text-base-content/30" />
+                            </div>
+                        ) : users.length === 0 ? (
+                            <p className="text-xs text-base-content/40 py-2">Aucun utilisateur dans cette entreprise.</p>
+                        ) : (
+                            <div className="flex flex-col gap-1.5">
+                                {users.map((u) => (
+                                    <div key={u.id} className="flex items-center gap-2.5 px-1 py-1">
+                                        <UserAvatar firstname={u.firstname} lastname={u.lastname} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium text-base-content truncate">
+                                                {u.firstname} {u.lastname}
+                                            </p>
+                                            <p className="text-[11px] text-base-content/50 truncate">{u.email}</p>
+                                        </div>
+                                        <RoleBadge role={u.role} />
                                     </div>
-                                    <RoleBadge role={u.role} />
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="border-t border-base-200 pt-3">
+                        <p className="text-xs font-semibold text-base-content/60 uppercase tracking-wide mb-2">
+                            Abonnement
+                        </p>
+                        {loadingSubscription ? (
+                            <div className="flex justify-center py-2">
+                                <span className="loading loading-spinner loading-sm text-base-content/30" />
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs text-base-content/50">
+                                    Plan actuel : <strong className="text-base-content">{subscription?.subscriptionPlan?.name ?? "Aucun"}</strong>
+                                </span>
+                                <select
+                                    value={selectedPlanId}
+                                    onChange={(e) => setSelectedPlanId(e.target.value)}
+                                    className="select select-xs border border-base-300 bg-base-100 text-sm"
+                                >
+                                    <option value="">Choisir un plan</option>
+                                    {plans.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={handleAssignPlan}
+                                    disabled={!selectedPlanId || assigning}
+                                    className="btn btn-xs btn-primary gap-1.5"
+                                >
+                                    {assigning ? <span className="loading loading-spinner loading-xs" /> : <Check size={12} />}
+                                    Assigner
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -409,6 +502,7 @@ export default function AdminAgenciesPage() {
 
     const [agencies, setAgencies] = useState<Agency[]>([]);
     const [agenciesLoading, setAgenciesLoading] = useState(false);
+    const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
 
@@ -443,6 +537,14 @@ export default function AdminAgenciesPage() {
         };
 
         fetchAgencies();
+
+        fetch(`${apiUrl}/subscription-plans`, { credentials: "include" })
+            .then((res) => (res.ok ? res.json() : []))
+            .then((data) => {
+                if (mounted) setPlans(Array.isArray(data) ? data : data?.data ?? []);
+            })
+            .catch((e) => console.warn("Failed to fetch subscription plans", e));
+
         return () => {
             mounted = false;
         };
@@ -544,6 +646,7 @@ export default function AdminAgenciesPage() {
                                     key={agency.id}
                                     agency={agency}
                                     apiUrl={apiUrl}
+                                    plans={plans}
                                     onRenamed={handleAgencyRenamed}
                                     onDeleted={handleAgencyDeleted}
                                 />

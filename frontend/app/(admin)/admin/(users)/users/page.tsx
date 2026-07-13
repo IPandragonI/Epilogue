@@ -14,6 +14,7 @@ import {
     ShieldAlert,
     AlertCircle,
     CheckCircle2,
+    LogIn,
 } from "lucide-react";
 import { UserRole } from "@/app/types/types";
 import { useAuth } from "@/app/hooks/useAuth";
@@ -354,6 +355,31 @@ function UserRow({
         });
     };
 
+    const handleImpersonate = () => {
+        Swal.fire({
+            title: "Se connecter en tant que cet utilisateur ?",
+            text: `Vous serez connecté en tant que ${managedUser.firstname} ${managedUser.lastname}. Vous devrez vous reconnecter manuellement pour revenir à votre compte.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Continuer",
+            cancelButtonText: "Annuler",
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            fetch(`${apiUrl}/auth/impersonate/${managedUser.id}`, {
+                method: "POST",
+                credentials: "include",
+            }).then((res) => {
+                if (res.ok) {
+                    window.location.href = "/dashboard";
+                } else {
+                    Swal.fire({ title: "Erreur", text: "Impossible de se connecter en tant que cet utilisateur.", icon: "error" });
+                }
+            }).catch(() => {
+                Swal.fire({ title: "Erreur", text: "Erreur réseau.", icon: "error" });
+            });
+        });
+    };
+
     return (
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-base-200 bg-base-50 hover:bg-base-100 transition-colors flex-wrap sm:flex-nowrap">
             <Avatar firstname={firstname} lastname={lastname} />
@@ -422,6 +448,15 @@ function UserRow({
                     </>
                 ) : (
                     <>
+                        {!isCurrentUser && (
+                            <button
+                                onClick={handleImpersonate}
+                                className="btn btn-xs btn-ghost text-base-content/40 hover:text-base-content/70"
+                                title="Se connecter en tant que"
+                            >
+                                <LogIn size={13} />
+                            </button>
+                        )}
                         <button
                             onClick={() => setEditing(true)}
                             className="btn btn-xs btn-ghost text-base-content/40 hover:text-base-content/70"
