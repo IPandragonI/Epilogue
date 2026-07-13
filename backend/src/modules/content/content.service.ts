@@ -3,7 +3,7 @@ import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { Content } from './entities/content.entity';
 import { ContentStatusEnum } from './entities/contentStatus.enum';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
 import { ContentSeoService } from '../content-seo/content-seo.service';
@@ -38,10 +38,12 @@ export class ContentService {
   async findAllWithSeoPaginated(
     page: number = 1,
     limit: number = 10,
+    status?: ContentStatusEnum,
   ): Promise<PaginatedResult<Content>> {
     const skip = (page - 1) * limit;
 
     const [data, total] = await this.contentRepository.findAndCount({
+      where: { status: status ?? Not(ContentStatusEnum.ARCHIVED) },
       relations: ['seo'],
       order: { createdAt: 'DESC' },
       take: limit,
@@ -67,30 +69,40 @@ export class ContentService {
   }
 
   async getStats() {
-    const [total, published, draft, waitingPublish, byPlatformRaw, avgSeoRaw] =
-      await Promise.all([
-        this.contentRepository.count(),
-        this.contentRepository.count({
-          where: { status: ContentStatusEnum.PUBLISHED },
-        }),
-        this.contentRepository.count({
-          where: { status: ContentStatusEnum.DRAFT },
-        }),
-        this.contentRepository.count({
-          where: { status: ContentStatusEnum.WAITING_PUBLISH },
-        }),
-        this.contentRepository
-          .createQueryBuilder('c')
-          .select('c.contentPlatform', 'platform')
-          .addSelect('COUNT(*)', 'count')
-          .groupBy('c.contentPlatform')
-          .getRawMany<{ platform: string; count: string }>(),
-        this.contentRepository
-          .createQueryBuilder('c')
-          .leftJoin('c.seo', 'seo')
-          .select('AVG(seo.score)', 'avg')
-          .getRawOne<{ avg: string | null }>(),
-      ]);
+    const [
+      total,
+      published,
+      draft,
+      waitingPublish,
+      archived,
+      byPlatformRaw,
+      avgSeoRaw,
+    ] = await Promise.all([
+      this.contentRepository.count(),
+      this.contentRepository.count({
+        where: { status: ContentStatusEnum.PUBLISHED },
+      }),
+      this.contentRepository.count({
+        where: { status: ContentStatusEnum.DRAFT },
+      }),
+      this.contentRepository.count({
+        where: { status: ContentStatusEnum.WAITING_PUBLISH },
+      }),
+      this.contentRepository.count({
+        where: { status: ContentStatusEnum.ARCHIVED },
+      }),
+      this.contentRepository
+        .createQueryBuilder('c')
+        .select('c.contentPlatform', 'platform')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('c.contentPlatform')
+        .getRawMany<{ platform: string; count: string }>(),
+      this.contentRepository
+        .createQueryBuilder('c')
+        .leftJoin('c.seo', 'seo')
+        .select('AVG(seo.score)', 'avg')
+        .getRawOne<{ avg: string | null }>(),
+    ]);
 
     const byPlatform = { BLOG: 0, LINKEDIN: 0, TWITTER: 0, INSTAGRAM: 0 };
     for (const row of byPlatformRaw) {
@@ -104,6 +116,7 @@ export class ContentService {
       published,
       draft,
       waitingPublish,
+      archived,
       avgSeoScore: Math.round(Number(avgSeoRaw?.avg ?? 0) * 10) / 10,
       byPlatform,
     };

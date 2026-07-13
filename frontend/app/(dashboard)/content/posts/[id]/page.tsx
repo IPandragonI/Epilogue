@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {useEffect, useState} from "react";
 import {useRouter, useParams, notFound} from "next/navigation";
-import {RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2, Download, Copy, Check, FileText, FileCode, ChevronDown, Globe, Clock, FileEdit} from "lucide-react";
+import {RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2, Download, Copy, Check, FileText, FileCode, ChevronDown, Globe, Clock, FileEdit, Archive, ArchiveRestore} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
 import TextEditor from "@/app/components/content/writing/TextEditor";
 import {Content, PlatformConfig, Platform, StatusLabels, ContentStatus, NotionSyncStatus} from "@/app/types/types";
@@ -156,6 +156,12 @@ const STATUS_OPTIONS: { value: ContentStatus; label: string; icon: React.ReactNo
         icon: <Globe size={13} />,
         cls: "text-success",
     },
+    {
+        value: ContentStatus.ARCHIVED,
+        label: "Archivé",
+        icon: <Archive size={13} />,
+        cls: "text-base-content/50",
+    },
 ];
 
 function StatusDropdown({ status, onChange }: { status: ContentStatus; onChange: (s: ContentStatus) => void }) {
@@ -170,7 +176,9 @@ function StatusDropdown({ status, onChange }: { status: ContentStatus; onChange:
                         ? "bg-success/10 text-success border-success/25"
                         : status === ContentStatus.WAITING_PUBLISH
                             ? "bg-warning/10 text-warning border-warning/25"
-                            : "bg-base-200 text-base-content/60 border-base-300"
+                            : status === ContentStatus.ARCHIVED
+                                ? "bg-base-300/40 text-base-content/50 border-base-300"
+                                : "bg-base-200 text-base-content/60 border-base-300"
                 }`}
             >
                 <span className={current.cls}>{current.icon}</span>
@@ -498,6 +506,13 @@ export default function PostDetailPage() {
                         >
                             <Pencil size={14}/>
                             Modifier
+                        </button>
+                        <button
+                            onClick={() => handleStatusChange(content.status === ContentStatus.ARCHIVED ? ContentStatus.DRAFT : ContentStatus.ARCHIVED)}
+                            className="btn btn-sm btn-outline gap-2 rounded-lg"
+                        >
+                            {content.status === ContentStatus.ARCHIVED ? <ArchiveRestore size={14}/> : <Archive size={14}/>}
+                            {content.status === ContentStatus.ARCHIVED ? "Restaurer" : "Archiver"}
                         </button>
                         <button
                             onClick={handleDelete}

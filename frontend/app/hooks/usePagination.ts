@@ -5,6 +5,7 @@ import {useEffect, useState, useCallback} from "react";
 type UsePaginationOptions = {
     url: string;
     limit?: number;
+    query?: Record<string, string>;
 };
 
 type UsePaginationReturn<T> = {
@@ -15,9 +16,10 @@ type UsePaginationReturn<T> = {
     loading: boolean;
     error: string | null;
     setPage: (page: number) => void;
+    refetch: () => void;
 };
 
-export function usePagination<T>({url, limit = 5}: UsePaginationOptions): UsePaginationReturn<T> {
+export function usePagination<T>({url, limit = 5, query}: UsePaginationOptions): UsePaginationReturn<T> {
     const [data, setData] = useState<T[]>([]);
     const [total, setTotal] = useState(0);
     const [lastPage, setLastPage] = useState(1);
@@ -25,11 +27,14 @@ export function usePagination<T>({url, limit = 5}: UsePaginationOptions): UsePag
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const queryKey = query ? JSON.stringify(query) : "";
+
     const fetchData = useCallback(async (currentPage: number) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${url}?page=${currentPage}&limit=${limit}`);
+            const params = new URLSearchParams({page: String(currentPage), limit: String(limit), ...query});
+            const response = await fetch(`${url}?${params.toString()}`);
             if (!response.ok) throw new Error("Erreur serveur");
             const result = await response.json();
             setData(result.data);
@@ -40,11 +45,12 @@ export function usePagination<T>({url, limit = 5}: UsePaginationOptions): UsePag
         } finally {
             setLoading(false);
         }
-    }, [url, limit]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [url, limit, queryKey]);
 
     useEffect(() => {
         fetchData(page);
     }, [page, fetchData]);
 
-    return {data, total, page, lastPage, loading, error, setPage};
+    return {data, total, page, lastPage, loading, error, setPage, refetch: () => fetchData(page)};
 }

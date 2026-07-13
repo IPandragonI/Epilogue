@@ -11,6 +11,7 @@ import {
 import { ContentService } from './content.service';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
+import { ContentStatusEnum } from './entities/contentStatus.enum';
 
 @Controller('content')
 export class ContentController {
@@ -35,8 +36,9 @@ export class ContentController {
   findAllWithSeoPaginated(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Query('status') status?: ContentStatusEnum,
   ) {
-    return this.contentService.findAllWithSeoPaginated(+page, +limit);
+    return this.contentService.findAllWithSeoPaginated(+page, +limit, status);
   }
 
   @Get('stats')

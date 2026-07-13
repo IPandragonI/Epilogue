@@ -52,12 +52,14 @@ const CONTENT_STATUS_BADGE: Record<ContentStatus, string> = {
     [ContentStatus.PUBLISHED]: "bg-success/10 text-success border-success/20",
     [ContentStatus.DRAFT]: "bg-base-200 text-base-content/60 border-base-300",
     [ContentStatus.WAITING_PUBLISH]: "bg-warning/10 text-warning border-warning/20",
+    [ContentStatus.ARCHIVED]: "bg-base-300/40 text-base-content/50 border-base-300",
 };
 
 const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
     [ContentStatus.PUBLISHED]: "Publié",
     [ContentStatus.DRAFT]: "Brouillon",
     [ContentStatus.WAITING_PUBLISH]: "En attente",
+    [ContentStatus.ARCHIVED]: "Archivé",
 };
 
 export default function NotionContentsPage() {

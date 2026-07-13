@@ -9,6 +9,7 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
         [ContentStatus.PUBLISHED]: "badge-success bg-success/10 text-success border-success/20",
         [ContentStatus.DRAFT]: "badge-ghost bg-base-200 text-base-content/70",
         [ContentStatus.WAITING_PUBLISH]: "badge-info bg-info/10 text-info border-info/20",
+        [ContentStatus.ARCHIVED]: "badge-ghost bg-base-300/40 text-base-content/50",
     };
 
     return (

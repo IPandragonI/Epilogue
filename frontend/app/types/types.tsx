@@ -3,11 +3,13 @@ export enum ContentStatus {
     PUBLISHED = "PUBLISHED",
     DRAFT = "DRAFT",
     WAITING_PUBLISH = "WAITING_PUBLISH",
+    ARCHIVED = "ARCHIVED",
 }
 export const StatusLabels: Record<ContentStatus, string> = {
     [ContentStatus.PUBLISHED]: "Publié",
     [ContentStatus.DRAFT]: "Brouillon",
     [ContentStatus.WAITING_PUBLISH]: "En attente",
+    [ContentStatus.ARCHIVED]: "Archivé",
 };
 
 export const NotionSyncStatus = {
