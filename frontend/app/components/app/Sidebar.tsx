@@ -8,11 +8,12 @@ import {
     LayoutDashboard,
     FileText,
     Layers,
-    RefreshCw,
     HelpCircle,
     Settings,
     ChevronDown,
     CreditCard,
+    CalendarDays,
+    Cloud,
 } from "lucide-react";
 
 type NavChild = { label: string; href: string };
@@ -50,13 +51,15 @@ const NAV_ITEMS: NavItem[] = [
         icon: <Layers size={18}/>,
     },
     {
-        type: "group",
-        label: "Notion",
-        icon: <RefreshCw size={18}/>,
-        children: [
-            {label: "Stockage de contenus", href: "/notion/contents"},
-            {label: "Calendrier éditorial", href: "/notion/calendar"},
-        ],
+        type: "link",
+        label: "Syncronisation Notion",
+        href: "/notion/contents",
+        icon: <Cloud size={18}/>,
+    },{
+        type: "link",
+        label: "Calendrier éditorial",
+        href: "/calendar",
+        icon: <CalendarDays size={18}/>,
     },
 ];
 
