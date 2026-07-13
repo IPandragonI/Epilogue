@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { X, Link, Rss, FileText, Zap, Upload } from "lucide-react";
+import { X, Link, Rss, FileText, Zap, Upload, Plus, Sparkles, AlertCircle } from "lucide-react";
 import {useAuth} from "@/app/hooks/useAuth";
 import {CreateCurationItemDto} from "@/app/types/types";
 
@@ -240,7 +240,7 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
             onClick={handleBackdropClick}
         >
             {/*
@@ -248,7 +248,8 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 Desktop : centered modal (rounded, 2/5 width, fixed height)
             */}
             <div className="
-                bg-base-300
+                bg-base-100
+                border border-base-300
                 flex flex-col
                 overflow-hidden
                 shadow-xl
@@ -262,36 +263,41 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 <div className="px-5 sm:px-6 pt-5 pb-3 shrink-0">
                     <div className="sm:hidden w-10 h-1 rounded-full bg-base-content/20 mx-auto mb-4"/>
 
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h2 className="text-base font-bold text-base-content">
-                                Ajouter une ressource
-                            </h2>
-                            <p className="text-xs text-base-content/50 mt-0.5">
-                                Enrichissez votre base de connaissances pour la génération IA
-                            </p>
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                                <Sparkles size={16} strokeWidth={1.8}/>
+                            </div>
+                            <div>
+                                <h2 className="text-base font-bold text-base-content">
+                                    Ajouter une ressource
+                                </h2>
+                                <p className="text-xs text-base-content/50 mt-0.5">
+                                    Enrichissez votre base de connaissances pour la génération IA
+                                </p>
+                            </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="btn btn-ghost btn-xs btn-square mt-0.5 shrink-0"
+                            className="btn btn-ghost btn-xs btn-square mt-0.5 shrink-0 text-base-content/40 hover:text-base-content/70"
                         >
                             <X size={16}/>
                         </button>
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex gap-0 mt-4 border-b border-base-300">
+                    <div className="flex gap-1 mt-4 bg-base-200 rounded-lg p-1">
                         {TABS.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                                    flex items-center gap-1.5 px-3 sm:px-4 py-2
-                                    text-xs sm:text-sm font-medium
-                                    border-b-2 transition-colors -mb-px cursor-pointer whitespace-nowrap
+                                    flex items-center justify-center gap-1.5 flex-1 px-3 py-1.5
+                                    text-xs sm:text-sm font-medium rounded-md
+                                    transition-colors cursor-pointer whitespace-nowrap
                                     ${activeTab === tab.id
-                                    ? "border-epilogue-navy text-epilogue-navy"
-                                    : "border-transparent text-base-content/50 hover:text-base-content/80"
+                                    ? "bg-base-100 text-epilogue-navy shadow-sm"
+                                    : "text-base-content/50 hover:text-base-content/80"
                                 }
                                 `}
                             >
@@ -310,13 +316,14 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                                 <label className="text-xs font-medium text-base-content/70">
                                     URL de la ressource
                                 </label>
-                                <div className="flex gap-2">
+                                <div className="flex items-center gap-2 input input-bordered input-sm flex-1 min-w-0 px-3 focus-within:border-accent">
+                                    <Link size={14} className="text-base-content/30 shrink-0" strokeWidth={1.8}/>
                                     <input
                                         type="url"
                                         value={url}
                                         onChange={(e) => setUrl(e.target.value)}
                                         placeholder="https://exemple.com/mon-super-article-seo"
-                                        className="input input-bordered input-sm flex-1 text-sm min-w-0"
+                                        className="flex-1 min-w-0 text-sm bg-transparent outline-none"
                                     />
                                 </div>
                             </div>
@@ -330,13 +337,16 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                                 URL du flux RSS
                             </label>
                             <div className="flex gap-2">
-                                <input
-                                    type="url"
-                                    value={rssUrl}
-                                    onChange={(e) => setRssUrl(e.target.value)}
-                                    placeholder="https://techcrunch.com/feed/"
-                                    className="input input-bordered input-sm flex-1 text-sm min-w-0"
-                                />
+                                <div className="flex items-center gap-2 input input-bordered input-sm flex-1 min-w-0 px-3 focus-within:border-accent">
+                                    <Rss size={14} className="text-base-content/30 shrink-0" strokeWidth={1.8}/>
+                                    <input
+                                        type="url"
+                                        value={rssUrl}
+                                        onChange={(e) => setRssUrl(e.target.value)}
+                                        placeholder="https://techcrunch.com/feed/"
+                                        className="flex-1 min-w-0 text-sm bg-transparent outline-none"
+                                    />
+                                </div>
                                 <button className="btn btn-sm btn-neutral gap-1.5 shrink-0">
                                     <Zap size={13} strokeWidth={2}/>
                                     <span className="hidden xs:inline">Récupérer</span>
@@ -363,17 +373,27 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
 
                             {/* Upload status / result */}
                             {uploadLoading && (
-                                <p className="text-xs text-base-content/60 mt-2">Envoi du fichier…</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <span className="loading loading-spinner loading-xs text-accent"/>
+                                    <p className="text-xs text-base-content/60">Envoi du fichier…</p>
+                                </div>
                             )}
                             {uploadError && (
-                                <p className="text-xs text-red-500 mt-2">Erreur : {uploadError}</p>
+                                <div className="flex items-start gap-2 mt-2 p-2.5 rounded-lg bg-red-500/10 text-red-600">
+                                    <AlertCircle size={14} className="shrink-0 mt-0.5"/>
+                                    <p className="text-xs">{uploadError}</p>
+                                </div>
                             )}
                             {uploadResult && (
-                                <div className="mt-2 p-3 bg-base-200 rounded">
-                                    <p className="text-sm font-semibold">Titre détecté</p>
-                                    <p className="text-sm">{uploadResult.title}</p>
-                                    <p className="text-sm font-semibold mt-2">Résumé</p>
-                                    <p className="text-sm text-base-content/70">{uploadResult.summary}</p>
+                                <div className="mt-2 p-3 bg-base-200 rounded-lg border border-base-300 flex flex-col gap-2">
+                                    <div>
+                                        <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">Titre détecté</p>
+                                        <p className="text-sm text-base-content">{uploadResult.title}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-base-content/50 uppercase tracking-wide">Résumé</p>
+                                        <p className="text-sm text-base-content/70">{uploadResult.summary}</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -382,7 +402,7 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
 
                 {/* ── Footer ── */}
                 <div
-                    className="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-black bg-accent-content/30 shrink-0">
+                    className="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-base-300 bg-base-200/40 shrink-0">
                     <button
                         onClick={onClose}
                         className="btn btn-ghost btn-sm"
@@ -391,11 +411,11 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="btn btn-neutral btn-sm gap-2"
+                        className="btn btn-accent btn-sm gap-2"
                         disabled={uploadLoading || loading}
                     >
+                        {uploadLoading ? <span className="loading loading-spinner loading-xs"/> : <Plus size={14}/>}
                         Ajouter la ressource
-                        <span className="text-base leading-none">+</span>
                     </button>
                 </div>
             </div>
@@ -430,12 +450,12 @@ function DropZone({ file, isDragging, onDrop, onDragOver, onDragLeave, onFileCha
                 cursor-pointer transition-colors
                 ${isDragging
                 ? "border-accent bg-accent/10"
-                : "border-base-content/20 hover:border-base-content/40 bg-base-100/30"
+                : "border-base-300 hover:border-accent/50 bg-base-200/30"
             }
             `}
         >
-            <div className="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center">
-                <Upload size={18} className="text-base-content/50" strokeWidth={1.8} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isDragging ? "bg-accent/20 text-accent" : "bg-base-200 text-base-content/50"}`}>
+                <Upload size={18} strokeWidth={1.8} />
             </div>
             {file ? (
                 <p className="text-sm font-medium text-accent text-center px-4 break-all">
