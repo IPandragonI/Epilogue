@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { X, Link, Rss, FileText, Zap, Upload, Plus, Sparkles, AlertCircle } from "lucide-react";
+import { X, Link, Rss, FileText, Zap, Upload, Check } from "lucide-react";
 import {useAuth} from "@/app/hooks/useAuth";
 import {CreateCurationItemDto} from "@/app/types/types";
 
@@ -10,7 +10,6 @@ type TabType = "url" | "rss" | "file";
 interface AddResourceModalProps {
     isOpen: boolean;
     onClose: () => void;
-    // onSubmit receives optional result object with success/message/item
     onSubmit?: (
         data: ResourceFormData,
         result?: { success: boolean; message?: string; item?: any },
@@ -25,11 +24,25 @@ export interface ResourceFormData {
     useAsImmediateContext: boolean;
 }
 
+interface RssFeedItem {
+    title: string;
+    link: string;
+    summary: string;
+    pubDate?: string;
+}
+
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: "url", label: "URL", icon: <Link size={14} strokeWidth={1.8} /> },
     { id: "rss", label: "Flux RSS", icon: <Rss size={14} strokeWidth={1.8} /> },
     { id: "file", label: "Fichier (PDF/Doc)", icon: <FileText size={14} strokeWidth={1.8} /> },
 ];
+
+function unwrapApiItem(json: any): any {
+    if (json && typeof json === "object" && "data" in json) {
+        return json.data;
+    }
+    return json;
+}
 
 export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalProps) {
     const { user, loading } = useAuth();
@@ -41,10 +54,17 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
     const [useAsContext, setUseAsContext] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    // upload states
+    // upload states (URL/file)
     const [uploadLoading, setUploadLoading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadResult, setUploadResult] = useState<{ title: string; summary: string } | null>(null);
+
+    // RSS states
+    const [rssFeedTitle, setRssFeedTitle] = useState("");
+    const [rssItems, setRssItems] = useState<RssFeedItem[]>([]);
+    const [rssFetchLoading, setRssFetchLoading] = useState(false);
+    const [rssFetchError, setRssFetchError] = useState<string | null>(null);
+    const [selectedRssLinks, setSelectedRssLinks] = useState<string[]>([]);
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -63,6 +83,52 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selected = e.target.files?.[0];
         if (selected) setFile(selected);
+    };
+
+    const handleFetchRss = async () => {
+        const trimmed = rssUrl.trim();
+        if (!trimmed) return;
+
+        setRssFetchLoading(true);
+        setRssFetchError(null);
+        setRssItems([]);
+        setSelectedRssLinks([]);
+
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/ai/parse-rss`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: trimmed }),
+                credentials: 'include',
+            });
+
+            const json = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                const err = json?.message || 'Impossible de récupérer le flux RSS';
+                setRssFetchError(typeof err === 'string' ? err : JSON.stringify(err));
+                return;
+            }
+
+            const data = json?.data;
+            setRssFeedTitle(data?.feedTitle ?? '');
+            setRssItems(Array.isArray(data?.items) ? data.items : []);
+
+            if (!data?.items?.length) {
+                setRssFetchError("Aucun article trouvé dans ce flux.");
+            }
+        } catch (e: unknown) {
+            const err = e as Error;
+            setRssFetchError(err?.message ?? String(e));
+        } finally {
+            setRssFetchLoading(false);
+        }
+    };
+
+    const toggleRssItem = (link: string) => {
+        setSelectedRssLinks((current) =>
+            current.includes(link) ? current.filter((l) => l !== link) : [...current, link]
+        );
     };
 
     const handleSubmit = async () => {
@@ -100,30 +166,26 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                                 name: String(json.fileName),
                                 sourceType: "PDF",
                                 sourceUrl: String(file.name),
-
                             }
                         }
 
                         const res2 = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/curation-item`, {
                             method: 'POST',
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
+                            headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(body),
                             credentials: 'include',
                         });
 
                         const res2Json = await res2.json().catch(() => null);
+                        const createdItem = unwrapApiItem(res2Json);
 
                         if (!res2.ok) {
                             const errMsg = res2Json?.message ? (Array.isArray(res2Json.message) ? res2Json.message.join(', ') : res2Json.message) : `Erreur ${res2.status}`;
                             setUploadError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
                             onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
                         } else {
-                            // success: forward result and created item
-                            onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: true, message: 'Ressource créée', item: res2Json });
+                            onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: true, message: 'Ressource créée', item: createdItem });
                         }
-
                     } else {
                         const errMsg = 'Upload succeeded but no data returned';
                         setUploadError(errMsg);
@@ -140,11 +202,9 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 return;
             }
 
-            // non-PDF files: just forward to parent for handling
             onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext});
             return;
-        }else if (activeTab === "url" && url) {
-            console.log("test url")
+        } else if (activeTab === "url" && url) {
             setUploadLoading(true);
             setUploadError(null);
             setUploadResult(null);
@@ -160,7 +220,7 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 });
 
                 const json = await res.json().catch(() => null);
-                const data = json.data;
+                const data = json?.data;
 
                 if (!res.ok) {
                     const err = data?.message || json || 'Scan failed';
@@ -186,24 +246,21 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
 
                     const res2 = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/curation-item`, {
                         method: 'POST',
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(body),
                         credentials: 'include',
                     });
 
                     const res2Json = await res2.json().catch(() => null);
+                    const createdItem = unwrapApiItem(res2Json);
 
                     if (!res2.ok) {
                         const errMsg = res2Json?.message ? (Array.isArray(res2Json.message) ? res2Json.message.join(', ') : res2Json.message) : `Erreur ${res2.status}`;
                         setUploadError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
                         onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
                     } else {
-                        // success: forward result and created item
-                        onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: true, message: 'Ressource créée', item: res2Json });
+                        onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext}, { success: true, message: 'Ressource créée', item: createdItem });
                     }
-
                 } else {
                     const errMsg = 'Upload succeeded but no data returned';
                     setUploadError(errMsg);
@@ -218,11 +275,98 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 setUploadLoading(false);
             }
 
-            onSubmit?.({tab: activeTab, file, useAsImmediateContext: useAsContext});
+            // Note: ne pas appeler onSubmit une seconde fois ici,
+            // le résultat a déjà été notifié dans le try/catch ci-dessus.
+            return;
+        } else if (activeTab === "rss" && selectedRssLinks.length) {
+            setUploadLoading(true);
+            setUploadError(null);
+
+            try {
+                const selectedItems = rssItems.filter((item) => selectedRssLinks.includes(item.link));
+                const createdItems: any[] = [];
+                let quotaExceeded = false;
+                let failureMessage: string | null = null;
+
+                for (const item of selectedItems) {
+                    let sourceName = rssFeedTitle;
+                    try {
+                        if (!sourceName) sourceName = new URL(item.link).hostname;
+                    } catch {
+                        sourceName = sourceName || 'Flux RSS';
+                    }
+
+                    const body: CreateCurationItemDto = {
+                        title: item.title,
+                        summary: item.summary,
+                        userId: String(user.id),
+                        source: {
+                            name: sourceName,
+                            sourceType: "RSS",
+                            sourceUrl: item.link,
+                        },
+                    };
+
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/curation-item`, {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body),
+                        credentials: 'include',
+                    });
+
+                    const resJson = await res.json().catch(() => null);
+
+                    if (!res.ok) {
+                        if (res.status === 403) {
+                            quotaExceeded = true;
+                            failureMessage = resJson?.message ?? "Quota de curation atteint";
+                            break;
+                        }
+
+                        const errMsg = resJson?.message
+                            ? (Array.isArray(resJson.message) ? resJson.message.join(', ') : resJson.message)
+                            : `Erreur ${res.status}`;
+                        failureMessage = typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg);
+                        continue;
+                    }
+
+                    createdItems.push(unwrapApiItem(resJson));
+                }
+
+                // On ne renvoie jamais un tableau dans `item` :
+                // le panneau de détail attend une seule ressource.
+                const firstItem = createdItems.length > 0 ? createdItems[0] : undefined;
+
+                if (createdItems.length === selectedItems.length) {
+                    onSubmit?.(
+                        {tab: activeTab, rssUrl, useAsImmediateContext: useAsContext},
+                        { success: true, message: `${createdItems.length} ressource(s) ajoutée(s)`, item: firstItem },
+                    );
+                } else if (createdItems.length > 0) {
+                    const partialMsg = quotaExceeded
+                        ? `${createdItems.length}/${selectedItems.length} ajoutée(s), quota de curation atteint pour le reste`
+                        : `${createdItems.length}/${selectedItems.length} ajoutée(s), ${failureMessage ?? "une erreur est survenue pour les autres"}`;
+                    setUploadError(partialMsg);
+                    onSubmit?.(
+                        {tab: activeTab, rssUrl, useAsImmediateContext: useAsContext},
+                        { success: true, message: partialMsg, item: firstItem },
+                    );
+                } else {
+                    const errMsg = failureMessage ?? "Aucune ressource n'a pu être ajoutée";
+                    setUploadError(errMsg);
+                    onSubmit?.({tab: activeTab, rssUrl, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+                }
+            } catch (e: unknown) {
+                const err = e as Error;
+                const errMsg = err?.message ?? String(e);
+                setUploadError(errMsg);
+                onSubmit?.({tab: activeTab, rssUrl, useAsImmediateContext: useAsContext}, { success: false, message: errMsg });
+            } finally {
+                setUploadLoading(false);
+            }
             return;
         }
 
-        // URL or RSS tabs: forward values (no server-created item here)
         onSubmit?.({
             tab: activeTab,
             url: activeTab === "url" ? url : undefined,
@@ -236,6 +380,13 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
         if (e.target === e.currentTarget) onClose();
     };
 
+    const isSubmitDisabled =
+        uploadLoading ||
+        loading ||
+        (activeTab === "url" && !url.trim()) ||
+        (activeTab === "file" && !file) ||
+        (activeTab === "rss" && !selectedRssLinks.length);
+
     if (!isOpen) return null;
 
     return (
@@ -243,10 +394,6 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
             onClick={handleBackdropClick}
         >
-            {/*
-                Mobile  : bottom sheet (rounded top corners, full width, auto height)
-                Desktop : centered modal (rounded, 2/5 width, fixed height)
-            */}
             <div className="
                 bg-base-100
                 border border-base-300
@@ -285,7 +432,6 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                         </button>
                     </div>
 
-                    {/* Tabs */}
                     <div className="flex gap-1 mt-4 bg-base-200 rounded-lg p-1">
                         {TABS.map((tab) => (
                             <button
@@ -311,28 +457,25 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                 <div className="px-5 sm:px-6 py-4 flex flex-col gap-4 overflow-y-auto flex-1">
 
                     {activeTab === "url" && (
-                        <>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs font-medium text-base-content/70">
-                                    URL de la ressource
-                                </label>
-                                <div className="flex items-center gap-2 input input-bordered input-sm flex-1 min-w-0 px-3 focus-within:border-accent">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-medium text-base-content/70">
+                                URL de la ressource
+                            </label>
+                            <div className="flex items-center gap-2 input input-bordered input-sm flex-1 min-w-0 px-3 focus-within:border-accent">
                                     <Link size={14} className="text-base-content/30 shrink-0" strokeWidth={1.8}/>
-                                    <input
-                                        type="url"
-                                        value={url}
-                                        onChange={(e) => setUrl(e.target.value)}
-                                        placeholder="https://exemple.com/mon-super-article-seo"
-                                        className="flex-1 min-w-0 text-sm bg-transparent outline-none"
-                                    />
-                                </div>
+                                <input
+                                    type="url"
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                    placeholder="https://exemple.com/mon-super-article-seo"
+                                    className="flex-1 min-w-0 text-sm bg-transparent outline-none"
+                                />
                             </div>
-                        </>
+                        </div>
                     )}
 
-                    {/* RSS tab */}
                     {activeTab === "rss" && (
-                        <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-2">
                             <label className="text-xs font-medium text-base-content/70">
                                 URL du flux RSS
                             </label>
@@ -347,15 +490,65 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                                         className="flex-1 min-w-0 text-sm bg-transparent outline-none"
                                     />
                                 </div>
-                                <button className="btn btn-sm btn-neutral gap-1.5 shrink-0">
-                                    <Zap size={13} strokeWidth={2}/>
+                                <button
+                                    onClick={handleFetchRss}
+                                    disabled={!rssUrl.trim() || rssFetchLoading}
+                                    className="btn btn-sm btn-neutral gap-1.5 shrink-0"
+                                >
+                                    {rssFetchLoading ? (
+                                        <span className="loading loading-spinner loading-xs"/>
+                                    ) : (
+                                        <Zap size={13} strokeWidth={2}/>
+                                    )}
                                     <span className="hidden xs:inline">Récupérer</span>
                                 </button>
                             </div>
+
+                            {rssFetchError && (
+                                <p className="text-xs text-red-500">{rssFetchError}</p>
+                            )}
+
+                            {rssItems.length > 0 && (
+                                <div className="flex flex-col gap-1.5 mt-1">
+                                    <p className="text-xs text-base-content/50">
+                                        {selectedRssLinks.length} article{selectedRssLinks.length > 1 ? "s" : ""} sélectionné{selectedRssLinks.length > 1 ? "s" : ""} sur {rssItems.length}
+                                    </p>
+                                    <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+                                        {rssItems.map((item) => {
+                                            const checked = selectedRssLinks.includes(item.link);
+                                            return (
+                                                <label
+                                                    key={item.link}
+                                                    className={`flex items-start gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
+                                                        checked ? "border-accent bg-accent/5" : "border-base-300 bg-base-100 hover:border-accent/40"
+                                                    }`}
+                                                >
+                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 mt-0.5 ${
+                                                        checked ? "bg-accent border-accent" : "border-base-content/30"
+                                                    }`}>
+                                                        {checked && <Check size={10} className="text-base-100"/>}
+                                                    </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={() => toggleRssItem(item.link)}
+                                                        className="hidden"
+                                                    />
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-medium leading-tight line-clamp-1">{item.title}</p>
+                                                        {item.summary && (
+                                                            <p className="text-xs text-base-content/50 mt-0.5 line-clamp-1">{item.summary}</p>
+                                                        )}
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* File tab */}
                     {activeTab === "file" && (
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium text-base-content/70">
@@ -371,7 +564,6 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                                 fileInputRef={fileInputRef}
                             />
 
-                            {/* Upload status / result */}
                             {uploadLoading && (
                                 <div className="flex items-center gap-2 mt-2">
                                     <span className="loading loading-spinner loading-xs text-accent"/>
@@ -398,9 +590,12 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                             )}
                         </div>
                     )}
+
+                    {activeTab === "rss" && uploadError && (
+                        <p className="text-xs text-red-500">Erreur : {uploadError}</p>
+                    )}
                 </div>
 
-                {/* ── Footer ── */}
                 <div
                     className="flex items-center justify-end gap-3 px-5 sm:px-6 py-4 border-t border-base-300 bg-base-200/40 shrink-0">
                     <button
@@ -412,9 +607,9 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                     <button
                         onClick={handleSubmit}
                         className="btn btn-accent btn-sm gap-2"
-                        disabled={uploadLoading || loading}
+                        disabled={isSubmitDisabled}
                     >
-                        {uploadLoading ? <span className="loading loading-spinner loading-xs"/> : <Plus size={14}/>}
+                        {uploadLoading ? <span className="loading loading-spinner loading-xs"/> : null}
                         Ajouter la ressource
                     </button>
                 </div>
@@ -423,9 +618,6 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
     );
 }
 
-/* ------------------------------------------------------------------ */
-/* DropZone sub-component                                               */
-/* ------------------------------------------------------------------ */
 interface DropZoneProps {
     file: File | null;
     isDragging: boolean;

@@ -233,4 +233,56 @@ export class AIController {
     const { tokensUsed, ...response } = result;
     return response;
   }
+
+  @Post('parse-rss')
+  @ApiOperation({
+    summary: 'Analyser un flux RSS',
+    description: "Récupère les derniers articles d'un flux RSS.",
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['url'],
+      properties: {
+        url: {
+          type: 'string',
+          format: 'uri',
+          example: 'https://techcrunch.com/feed/',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Articles récupérés avec succès.',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          feedTitle: 'TechCrunch',
+          items: [
+            {
+              title: 'Titre article',
+              link: 'https://...',
+              summary: 'Résumé...',
+              pubDate: '2026-07-01T10:00:00Z',
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: "L'URL est requise." })
+  @ApiResponse({
+    status: 500,
+    description: 'Échec de la récupération du flux.',
+  })
+  async parseRss(@Body('url') url: string) {
+    if (!url) {
+      throw new BadRequestException('URL is required');
+    }
+
+    const result = await this.aiService.parseRssFeed(url);
+    return { success: true, data: result };
+  }
 }

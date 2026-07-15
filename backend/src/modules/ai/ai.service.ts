@@ -12,6 +12,7 @@ import {
   GeneratedSuggestedTopic,
   SuggestedTopicGenerationContext,
 } from '../suggested-topic/interfaces/suggested-topic-generation.interface';
+import { RssService, RssFeedResult } from './rss.service';
 
 @Injectable()
 export class AIService {
@@ -21,6 +22,7 @@ export class AIService {
     private readonly scrappingService: ScrappingService,
     private readonly curationItemService: CurationItemService,
     private readonly contentService: ContentService,
+    private readonly rssService: RssService,
   ) {}
 
   async generateText(prompt: string): Promise<string> {
@@ -143,5 +145,9 @@ export class AIService {
         `Erreur lors de l'analyse SEO : ${error.message}`,
       );
     }
+  }
+
+  async parseRssFeed(url: string): Promise<RssFeedResult> {
+    return this.rssService.parseFeed(url);
   }
 }
