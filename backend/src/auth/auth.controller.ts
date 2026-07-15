@@ -81,7 +81,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Se connecter en tant qu'un autre utilisateur (super admin)" })
+  @ApiOperation({
+    summary: "Se connecter en tant qu'un autre utilisateur (super admin)",
+  })
   async impersonate(
     @Param('userId') userId: string,
     @Res() reply: FastifyReply,
@@ -144,11 +146,24 @@ export class AuthController {
 
   // ─── Google OAuth ─────────────────────────────────────────────────────────
   @Get('google')
-  async googleLogin(@Req() req, @Res() reply) {
+  async googleLogin(
+    @Req() req: FastifyRequest,
+    @Res() reply: FastifyReply,
+    @Query('agencyName') agencyName?: string,
+  ) {
     const fastify = (req as any).server;
 
-    const url = await fastify.googleOAuth2.generateAuthorizationUri(req, reply);
+    if (agencyName) {
+      reply.setCookie('oauth_agency_name', agencyName, {
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 5 * 60,
+      });
+    }
 
+    const url = await fastify.googleOAuth2.generateAuthorizationUri(req, reply);
     return reply.code(302).header('Location', url).send();
   }
 
@@ -161,39 +176,49 @@ export class AuthController {
         req,
         reply,
       );
-
     const accessToken = tokenGoogle.token.access_token;
 
     const googleUser = await fetch(
       'https://www.googleapis.com/oauth2/v2/userinfo',
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
+      { headers: { Authorization: `Bearer ${accessToken}` } },
     ).then((r) => r.json());
 
-    const user = await this.authService.findOrCreateOAuthUser({
-      provider: 'google',
-      providerAccountId: googleUser.id,
-      email: googleUser.email,
-      firstname: googleUser.given_name,
-      lastname: googleUser.family_name,
-      image: googleUser.picture,
-    });
+    const agencyName = (req.cookies as any)?.oauth_agency_name;
 
-    const token = this.authService.generateJwt(user);
+    try {
+      const user = await this.authService.findOrCreateOAuthUser({
+        provider: 'google',
+        providerAccountId: googleUser.id,
+        email: googleUser.email,
+        firstname: googleUser.given_name,
+        lastname: googleUser.family_name,
+        image: googleUser.picture,
+        agencyName,
+      });
 
-    return reply
-      .setCookie('access_token', token, {
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      })
-      .code(302)
-      .header('Location', `${process.env.FRONTEND_URL}/dashboard`)
-      .send();
+      const token = this.authService.generateJwt(user);
+
+      return reply
+        .setCookie('access_token', token, {
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        })
+        .clearCookie('oauth_agency_name', { path: '/' })
+        .code(302)
+        .header('Location', `${process.env.FRONTEND_URL}/dashboard`)
+        .send();
+    } catch (err) {
+      return reply
+        .clearCookie('oauth_agency_name', { path: '/' })
+        .code(302)
+        .header(
+          'Location',
+          `${process.env.FRONTEND_URL}/register?error=agency_required`,
+        )
+        .send();
+    }
   }
 
   // ─── Me ──────────────────────────────────────────────────────────────────────

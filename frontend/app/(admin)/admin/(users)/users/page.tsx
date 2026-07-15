@@ -159,6 +159,7 @@ function CreateUserModal({
                     lastname: form.lastname,
                     email: form.email,
                     password: form.password,
+                    agencyName: agencies.find((a) => a.id === form.agencyId)?.name ?? "",
                 }),
             });
             if (!res.ok) {

@@ -23,7 +23,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import UserAvatar from "@/app/components/app/UserAvatar";
-import { UserRole } from "@/app/types/types";
+import {Agency, UserRole} from "@/app/types/types";
 import { useAuth } from "@/app/hooks/useAuth";
 import Swal from "sweetalert2";
 
@@ -362,15 +362,15 @@ function AgencyUserRow({
 function CreateUserModal({
                            onClose,
                            onCreated,
-                           agencyId,
+                           agency,
                            apiUrl,
                          }: {
   onClose: () => void;
   onCreated: (user: AgencyUser) => void;
-  agencyId: string;
+  agency: Agency;
   apiUrl: string;
 }) {
-  const [form, setForm] = useState({ firstname: "", lastname: "", email: "", password: "" });
+  const [form, setForm] = useState({ firstname: "", lastname: "", email: "", password: "", agencyName: agency.name });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -382,11 +382,16 @@ function CreateUserModal({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`${apiUrl}/agency/${agencyId}/user`, {
+      const payload = {
+        ...form,
+        agencyName: agency.name,
+      };
+
+      const res = await fetch(`${apiUrl}/agency/${agency.id}/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -480,7 +485,7 @@ function CreateUserModal({
             <button onClick={onClose} className="btn btn-sm btn-ghost">Annuler</button>
             <button onClick={handleCreate} disabled={saving} className="btn btn-sm btn-primary gap-2">
               {saving ? <span className="loading loading-spinner loading-xs" /> : <Plus size={14} />}
-              Créer l'utilisateur
+              Créer l&#39;utilisateur
             </button>
           </div>
         </div>
@@ -1045,7 +1050,7 @@ export default function SettingsPage() {
             <CreateUserModal
                 onClose={() => setShowCreateModal(false)}
                 onCreated={handleUserCreated}
-                agencyId={user.agency?.id}
+                agency={user.agency}
                 apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
             />
         )}

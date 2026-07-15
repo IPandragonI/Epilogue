@@ -11,11 +11,12 @@ import { ForgotPasswordDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto
 import { User } from '../modules/users/entities/user.entity';
 import { UserRole } from '../modules/users/entities/userRole.enum';
 import { AccountsService } from '../modules/accounts/accounts.controller';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { MailService } from '../modules/mail/mail.service';
 import { ConfigService } from '@nestjs/config';
+import { Agency } from '../modules/agency/entities/agency.entity';
 
 export interface OAuthUserPayload {
   provider: string;
@@ -42,6 +43,8 @@ export class AuthService {
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   // ─── Email / Password ────────────────────────────────────────────────────────
@@ -57,17 +60,19 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    const user = await this.usersService.create({
-      firstname: dto.firstname,
-      lastname: dto.lastname,
-      email: dto.email,
-      password: passwordHash,
-      role: UserRole.PUBLIC,
+    return this.dataSource.transaction(async (manager) => {
+      const agency = await manager.save(Agency, { name: dto.agencyName });
+
+      return manager.save(User, {
+        firstname: dto.firstname,
+        lastname: dto.lastname,
+        email: dto.email,
+        password: passwordHash,
+        role: UserRole.ADMIN,
+        agency,
+      });
     });
-
-    return user;
   }
-
   async validateLocalUser(
     email: string,
     password: string,
@@ -88,7 +93,9 @@ export class AuthService {
   }
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
-    const user = await this.usersService.findByEmail(dto.email).catch(() => null);
+    const user = await this.usersService
+      .findByEmail(dto.email)
+      .catch(() => null);
 
     if (!user) {
       return;
@@ -99,7 +106,8 @@ export class AuthService {
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = hashResetToken(rawToken);
     const expiresInMinutes = Number(
-      this.configService.get<string>('PASSWORD_RESET_TOKEN_TTL_MINUTES') ?? '60',
+      this.configService.get<string>('PASSWORD_RESET_TOKEN_TTL_MINUTES') ??
+        '60',
     );
 
     await this.passwordResetTokenRepository.save({
@@ -108,7 +116,8 @@ export class AuthService {
       expiresAt: new Date(Date.now() + expiresInMinutes * 60 * 1000),
     });
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
     const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
     await this.mailService.sendPasswordResetEmail({
@@ -126,21 +135,25 @@ export class AuthService {
   async resetPassword(dto: ResetPasswordDto): Promise<void> {
     const resetToken = await this.getValidPasswordResetToken(dto.token);
 
-    await this.usersService.update(resetToken.userId, { password: dto.password });
-    await this.passwordResetTokenRepository.delete({ userId: resetToken.userId });
+    await this.usersService.update(resetToken.userId, {
+      password: dto.password,
+    });
+    await this.passwordResetTokenRepository.delete({
+      userId: resetToken.userId,
+    });
   }
 
   // ─── OAuth ───────────────────────────────────────────────────────────────────
 
-  async findOrCreateOAuthUser(payload: OAuthUserPayload): Promise<User> {
-    // 1. Cherche si un compte OAuth existe déjà pour ce provider
+  async findOrCreateOAuthUser(
+    payload: OAuthUserPayload & { agencyName?: string },
+  ): Promise<User> {
     const existingAccount = await this.accountsService.findByProvider(
       payload.provider,
       payload.providerAccountId,
     );
 
     if (existingAccount) {
-      // Met à jour les tokens et renvoie le user lié
       await this.accountsService.upsert({
         userId: existingAccount.userId,
         ...payload,
@@ -148,23 +161,33 @@ export class AuthService {
       return this.usersService.findOne(existingAccount.userId);
     }
 
-    // 2. Cherche si un user existe déjà avec cet email (connexion classique)
     let user = await this.usersService
       .findByEmail(payload.email)
       .catch(() => null);
 
-    // 3. Sinon crée le user
     if (!user) {
-      user = await this.usersService.create({
-        firstname: payload.firstname,
-        lastname: payload.lastname,
-        email: payload.email,
-        password: null, // pas de mot de passe pour un user OAuth-only
-        role: UserRole.PUBLIC,
+      if (!payload.agencyName?.trim()) {
+        throw new BadRequestException(
+          "Le nom de l'agence est requis pour créer un compte.",
+        );
+      }
+
+      user = await this.dataSource.transaction(async (manager) => {
+        const agency = await manager.save(Agency, {
+          name: payload.agencyName,
+        });
+
+        return manager.save(User, {
+          firstname: payload.firstname,
+          lastname: payload.lastname,
+          email: payload.email,
+          password: null,
+          role: UserRole.ADMIN,
+          agency,
+        });
       });
     }
 
-    // 4. Crée le compte OAuth lié
     await this.accountsService.upsert({
       userId: user.id,
       provider: payload.provider,

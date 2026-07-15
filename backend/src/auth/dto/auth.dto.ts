@@ -22,7 +22,11 @@ export class RegisterDto {
   @MinLength(8)
   password: string;
 
-  
+  @ApiProperty({ example: 'Mon Agence' })
+  @IsString()
+  @IsNotEmpty()
+  agencyName: string;
+
   @ApiProperty({ enum: UserRole, example: UserRole.ADMIN })
   @IsOptional()
   @IsEnum(UserRole)
