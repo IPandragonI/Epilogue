@@ -14,7 +14,7 @@ import {
     CreditCard,
     CalendarDays,
     Cloud,
-    ShieldCheck,
+    ShieldCheck
 } from "lucide-react";
 import {useAuth} from "@/app/hooks/useAuth";
 import {UserRole} from "@/app/types/types";

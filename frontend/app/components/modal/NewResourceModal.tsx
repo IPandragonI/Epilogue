@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { X, Link, Rss, FileText, Zap, Upload, Check } from "lucide-react";
+import { X, Link, Rss, FileText, Zap, Upload, Check, Sparkles, AlertCircle } from "lucide-react";
 import {useAuth} from "@/app/hooks/useAuth";
 import {CreateCurationItemDto} from "@/app/types/types";
 

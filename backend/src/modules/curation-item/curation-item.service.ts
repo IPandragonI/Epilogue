@@ -16,13 +16,34 @@ export class CurationItemService {
   ) {}
 
   async create(createCurationItemDto: CreateCurationItemDto, userId: string) {
-    const sourceSaved = await this.curationSourceRepository.save(
-      createCurationItemDto.source,
-    );
+    const { source, title, summary } = createCurationItemDto;
+
+    const existing = await this.curationItemRepository.findOne({
+      where: {
+        title,
+        user: { id: userId },
+        source: { sourceUrl: source.sourceUrl },
+      },
+      relations: ['source'],
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    let sourceSaved: CurationSource;
+    if (source.sourceType !== 'PDF') {
+      const existingSource = await this.curationSourceRepository.findOne({
+        where: { sourceUrl: source.sourceUrl },
+      });
+      sourceSaved = existingSource ?? (await this.curationSourceRepository.save(source));
+    } else {
+      sourceSaved = await this.curationSourceRepository.save(source);
+    }
 
     const toSave: any = {
-      title: String(createCurationItemDto.title),
-      summary: String(createCurationItemDto.summary),
+      title: String(title),
+      summary: summary ? String(summary) : null,
       user: { id: userId },
       source: sourceSaved,
     };

@@ -235,6 +235,8 @@ export class AIController {
   }
 
   @Post('parse-rss')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Analyser un flux RSS',
     description: "Récupère les derniers articles d'un flux RSS.",

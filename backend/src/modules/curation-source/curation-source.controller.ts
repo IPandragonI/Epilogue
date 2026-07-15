@@ -21,16 +21,16 @@ export class CurationSourceController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.curationSourceService.findOne(+id);
+    return this.curationSourceService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCurationSourceDto: UpdateCurationSourceDto) {
-    return this.curationSourceService.update(+id, updateCurationSourceDto);
+    return this.curationSourceService.update(id, updateCurationSourceDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.curationSourceService.remove(+id);
+    return this.curationSourceService.remove(id);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCurationSourceDto } from './dto/create-curation-source.dto';
 import { UpdateCurationSourceDto } from './dto/update-curation-source.dto';
 import { CurationSource } from './entities/curation-source.entity';
@@ -7,29 +7,39 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class CurationSourceService {
-
-    constructor(
-      @InjectRepository(CurationSource)
-      private curationSourceRepository: Repository<CurationSource>) {
-    }
+  constructor(
+    @InjectRepository(CurationSource)
+    private curationSourceRepository: Repository<CurationSource>,
+  ) {}
 
   create(createCurationSourceDto: CreateCurationSourceDto) {
     return this.curationSourceRepository.save(createCurationSourceDto);
   }
 
   findAll() {
-    return `This action returns all curationSource`;
+    return this.curationSourceRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} curationSource`;
+  async findOne(id: string) {
+    const source = await this.curationSourceRepository.findOne({
+      where: { id },
+    });
+
+    if (!source) {
+      throw new NotFoundException(`Curation source with id ${id} not found`);
+    }
+
+    return source;
   }
 
-  update(id: number, updateCurationSourceDto: UpdateCurationSourceDto) {
-    return `This action updates a #${id} curationSource`;
+  async update(id: string, updateCurationSourceDto: UpdateCurationSourceDto) {
+    await this.findOne(id);
+    await this.curationSourceRepository.update(id, updateCurationSourceDto);
+    return this.findOne(id);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} curationSource`;
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.curationSourceRepository.delete(id);
   }
 }
