@@ -10,13 +10,14 @@ import { SubscriptionGuard } from '../../auth/guards/subscription.guard';
 import { UsageTrackingInterceptor } from '../../auth/interceptors/usage-tracking.interceptor';
 import { CurationItemModule } from '../curation-item/curation-item.module';
 import { ContentModule } from '../content/content.module';
+import { RssService } from './rss.service';
 
 @Module({
   imports: [
     CurationItemModule,
     UsersModule,
     AgencySubscriptionModule,
-    ContentModule
+    ContentModule,
   ],
   controllers: [AIController],
   providers: [
@@ -24,6 +25,7 @@ import { ContentModule } from '../content/content.module';
     AIProviderFactory,
     PromptService,
     ScrappingService,
+    RssService,
     SubscriptionGuard,
     UsageTrackingInterceptor,
   ],

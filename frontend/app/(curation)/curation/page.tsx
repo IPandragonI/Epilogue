@@ -248,8 +248,15 @@ export default function CurationPage() {
                             icon: "success"
                         });
                         fetchItems();
-                        if (result.item) {
-                            setResourceSelected(result.item);
+
+                        const item = result.item;
+                        if (
+                            item &&
+                            typeof item === "object" &&
+                            !Array.isArray(item) &&
+                            typeof item.title === "string"
+                        ) {
+                            setResourceSelected(item as CurationItems);
                             setMobileShowDetail(true);
                         }
                     } else {
