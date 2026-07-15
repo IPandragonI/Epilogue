@@ -8,17 +8,27 @@ import ScoreBar from "@/app/components/content/ScoreBar";
 import StatusBadge from "@/app/components/content/StatusBadge";
 import Table, {Column} from "@/app/components/app/Table";
 import {usePagination} from "@/app/hooks/usePagination";
+import {useAuth} from "@/app/hooks/useAuth";
 import Swal from "sweetalert2";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+type Scope = "own" | "agency";
+
 export default function DashboardTable() {
+    const {user} = useAuth();
     const [showArchived, setShowArchived] = useState(false);
+    const [scope, setScope] = useState<Scope>("own");
+    const hasAgency = !!user?.agency;
+
+    const query: Record<string, string> = {};
+    if (showArchived) query.status = ContentStatus.ARCHIVED;
+    if (hasAgency && scope === "agency") query.scope = "agency";
 
     const {data, total, page, lastPage, loading, error, setPage, refetch} = usePagination<Content>({
         url: `${API_URL}/content/with-seo-paginated`,
         limit: 5,
-        query: showArchived ? {status: ContentStatus.ARCHIVED} : undefined,
+        query: Object.keys(query).length ? query : undefined,
     });
 
     const handleToggleArchive = async (item: Content) => {
@@ -63,6 +73,15 @@ export default function DashboardTable() {
                 </Link>
             ),
         },
+        ...(scope === "agency" ? [{
+            key: "author",
+            header: <span className="font-medium">Auteur</span>,
+            renderer: (item: Content) => (
+                <span className="text-sm text-base-content/70">
+                    {item.user ? `${item.user.firstname} ${item.user.lastname}` : "—"}
+                </span>
+            ),
+        } as Column<Content>] : []),
         {
             key: "date",
             header: (
@@ -101,7 +120,7 @@ export default function DashboardTable() {
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 px-6 pt-4">
+            <div className="flex items-center gap-2 px-6 pt-4 flex-wrap">
                 <div className="join">
                     <button
                         onClick={() => {setShowArchived(false); setPage(1);}}
@@ -116,6 +135,23 @@ export default function DashboardTable() {
                         Archivés
                     </button>
                 </div>
+
+                {hasAgency && (
+                    <div className="join">
+                        <button
+                            onClick={() => {setScope("own"); setPage(1);}}
+                            className={`join-item btn btn-sm rounded-l-full ${scope === "own" ? "btn-active" : "btn-outline"}`}
+                        >
+                            Mes posts
+                        </button>
+                        <button
+                            onClick={() => {setScope("agency"); setPage(1);}}
+                            className={`join-item btn btn-sm rounded-r-full ${scope === "agency" ? "btn-active" : "btn-outline"}`}
+                        >
+                            Toute l&apos;agence
+                        </button>
+                    </div>
+                )}
             </div>
 
             <Table<Content>

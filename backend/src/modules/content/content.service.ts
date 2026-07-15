@@ -3,10 +3,17 @@ import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { Content } from './entities/content.entity';
 import { ContentStatusEnum } from './entities/contentStatus.enum';
-import { Not, Repository } from 'typeorm';
+import { FindOptionsWhere, Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginatedResult } from '../../common/interfaces/pagination.interface';
 import { ContentSeoService } from '../content-seo/content-seo.service';
+
+const AUTHOR_SELECT = {
+  id: true,
+  firstname: true,
+  lastname: true,
+  avatarUrl: true,
+} as const;
 
 @Injectable()
 export class ContentService {
@@ -16,12 +23,24 @@ export class ContentService {
     private readonly contentSeoService: ContentSeoService,
   ) {}
 
+  private scopeWhere(
+    userId: string,
+    agencyId?: string,
+  ): FindOptionsWhere<Content> {
+    return agencyId ? { user: { agencyId } } : { userId };
+  }
+
   create(createContentDto: CreateContentDto, userId: string) {
     return this.contentRepository.save({ ...createContentDto, userId });
   }
 
-  findAll(userId: string) {
-    return this.contentRepository.find({ where: { userId } });
+  findAll(userId: string, agencyId?: string) {
+    return this.contentRepository.find({
+      where: this.scopeWhere(userId, agencyId),
+      relations: ['user'],
+      select: { user: AUTHOR_SELECT },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   findAllWithSEO(userId: string) {
@@ -44,12 +63,17 @@ export class ContentService {
     page: number = 1,
     limit: number = 10,
     status?: ContentStatusEnum,
+    agencyId?: string,
   ): Promise<PaginatedResult<Content>> {
     const skip = (page - 1) * limit;
 
     const [data, total] = await this.contentRepository.findAndCount({
-      where: { userId, status: status ?? Not(ContentStatusEnum.ARCHIVED) },
-      relations: ['seo'],
+      where: {
+        ...this.scopeWhere(userId, agencyId),
+        status: status ?? Not(ContentStatusEnum.ARCHIVED),
+      },
+      relations: ['seo', 'user'],
+      select: { user: AUTHOR_SELECT },
       order: { createdAt: 'DESC' },
       take: limit,
       skip: skip,
@@ -66,10 +90,15 @@ export class ContentService {
     };
   }
 
-  async findOne(id: string, userId: string) {
+  async findOne(id: string, userId: string, agencyId?: string) {
+    const where = agencyId
+      ? [{ id, userId }, { id, user: { agencyId } }]
+      : { id, userId };
+
     const content = await this.contentRepository.findOne({
-      where: { id, userId },
-      relations: ['seo', 'notion'],
+      where,
+      relations: ['seo', 'notion', 'user'],
+      select: { user: AUTHOR_SELECT },
     });
 
     if (!content) {

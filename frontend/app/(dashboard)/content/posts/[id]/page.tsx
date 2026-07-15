@@ -5,8 +5,10 @@ import {useEffect, useState} from "react";
 import {useRouter, useParams, notFound} from "next/navigation";
 import {RefreshCw, Pencil, Send, X, Save, Sparkles, Trash2, Download, Copy, Check, FileText, FileCode, ChevronDown, Globe, Clock, FileEdit, Archive, ArchiveRestore} from "lucide-react";
 import SeoScoreGauge from "@/app/components/content/SeoScoreGauge";
+import StatusBadge from "@/app/components/content/StatusBadge";
 import TextEditor from "@/app/components/content/writing/TextEditor";
 import {Content, PlatformConfig, Platform, StatusLabels, ContentStatus, NotionSyncStatus} from "@/app/types/types";
+import {useAuth} from "@/app/hooks/useAuth";
 import Swal from "sweetalert2";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -287,6 +289,7 @@ export default function PostDetailPage() {
     const router = useRouter();
     const params = useParams();
     const id = params.id as string;
+    const {user: currentUser} = useAuth();
 
     const [content, setContent] = useState<Content | null>(null);
     const [loading, setLoading] = useState(true);
@@ -350,6 +353,7 @@ export default function PostDetailPage() {
 
     const currentPlatform = PlatformConfig[content.contentPlatform ?? Platform.BLOG];
     const isOverLimit = charCount > currentPlatform.maxLength;
+    const isOwner = !content.user || content.user.id === currentUser?.id;
 
     const body = isEditing ? editedBody : (content.body ?? "");
 
@@ -543,7 +547,11 @@ export default function PostDetailPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-                {isEditing ? (
+                {!isOwner ? (
+                    <span className="badge badge-ghost gap-1.5 text-xs font-medium">
+                        Post de {content.user?.firstname} {content.user?.lastname} · lecture seule
+                    </span>
+                ) : isEditing ? (
                     <>
                         <button
                             onClick={handleCancel}
@@ -617,25 +625,32 @@ export default function PostDetailPage() {
                                     ? "Synchroniser avec Notion"
                                     : "Envoyer vers Notion"}
                         </button>
-                        <ExportMenu title={content.title} body={content.body ?? ""} />
                     </>
                 )}
+
+                <ExportMenu title={content.title} body={content.body ?? ""} />
 
                 <span className={`badge gap-1.5 text-xs font-medium ${currentPlatform.bg} ${currentPlatform.color} border-none`}>
                     {currentPlatform.icon}
                     {currentPlatform.label}
                 </span>
 
-                <StatusDropdown status={content.status} scheduledPublishDate={content.scheduledPublishDate} onChange={handleStatusChange} />
+                {isOwner ? (
+                    <>
+                        <StatusDropdown status={content.status} scheduledPublishDate={content.scheduledPublishDate} onChange={handleStatusChange} />
 
-                {content.status !== ContentStatus.PUBLISHED && (
-                    <button
-                        onClick={() => handleStatusChange(ContentStatus.PUBLISHED)}
-                        className="btn btn-sm btn-primary gap-2 rounded-lg ml-1"
-                    >
-                        <Globe size={14} />
-                        Publier
-                    </button>
+                        {content.status !== ContentStatus.PUBLISHED && (
+                            <button
+                                onClick={() => handleStatusChange(ContentStatus.PUBLISHED)}
+                                className="btn btn-sm btn-primary gap-2 rounded-lg ml-1"
+                            >
+                                <Globe size={14} />
+                                Publier
+                            </button>
+                        )}
+                    </>
+                ) : (
+                    <StatusBadge status={content.status} />
                 )}
             </div>
 

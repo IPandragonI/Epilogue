@@ -64,6 +64,13 @@ export const PlatformConfig: Record<PlatformType, { label: string; subLabel: str
     },
 };
 
+export interface ContentAuthor {
+    id: string;
+    firstname: string;
+    lastname: string;
+    avatarUrl?: string | null;
+}
+
 export interface Content {
     id: number;
     title: string;
@@ -76,6 +83,7 @@ export interface Content {
     seo?: ContentSeo;
     status: ContentStatus;
     notion?: ContentNotion;
+    user?: ContentAuthor;
 }
 
 export interface ContentSeo {

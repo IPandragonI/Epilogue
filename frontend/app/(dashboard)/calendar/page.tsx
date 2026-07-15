@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Content, ContentStatus } from "@/app/types/types";
+import { useAuth } from "@/app/hooks/useAuth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -62,19 +63,24 @@ function resolveDate(c: Content): Date {
 }
 
 export default function CalendrierPage() {
+    const { user } = useAuth();
+    const hasAgency = !!user?.agency;
     const today = new Date();
     const [year, setYear] = useState(today.getFullYear());
     const [month, setMonth] = useState(today.getMonth());
+    const [scope, setScope] = useState<"own" | "agency">("own");
     const [contents, setContents] = useState<Content[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch(`${API_URL}/content`, { credentials: "include" })
+        setLoading(true);
+        const query = hasAgency && scope === "agency" ? "?scope=agency" : "";
+        fetch(`${API_URL}/content${query}`, { credentials: "include" })
             .then((r) => r.json())
             .then((data) => setContents(Array.isArray(data) ? data : []))
             .catch(() => setContents([]))
             .finally(() => setLoading(false));
-    }, []);
+    }, [scope, hasAgency]);
 
     const days = useMemo(() => buildCalendarDays(year, month), [year, month]);
     const todayKey = dateKey(today);
@@ -133,13 +139,31 @@ export default function CalendrierPage() {
                         Vue mensuelle de vos publications
                     </p>
                 </div>
-                <Link
-                    href="/content/writing"
-                    className="btn btn-accent btn-sm gap-2 rounded-full px-4"
-                >
-                    <Plus size={15} />
-                    Nouveau post
-                </Link>
+                <div className="flex items-center gap-3 flex-wrap">
+                    {hasAgency && (
+                        <div className="join">
+                            <button
+                                onClick={() => setScope("own")}
+                                className={`join-item btn btn-sm rounded-l-full ${scope === "own" ? "btn-active" : "btn-outline"}`}
+                            >
+                                Mes posts
+                            </button>
+                            <button
+                                onClick={() => setScope("agency")}
+                                className={`join-item btn btn-sm rounded-r-full ${scope === "agency" ? "btn-active" : "btn-outline"}`}
+                            >
+                                Toute l&apos;agence
+                            </button>
+                        </div>
+                    )}
+                    <Link
+                        href="/content/writing"
+                        className="btn btn-accent btn-sm gap-2 rounded-full px-4"
+                    >
+                        <Plus size={15} />
+                        Nouveau post
+                    </Link>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -278,7 +302,7 @@ export default function CalendrierPage() {
                                             <Link
                                                 key={c.id}
                                                 href={`/content/posts/${c.id}`}
-                                                title={c.title}
+                                                title={scope === "agency" && c.user ? `${c.title} — ${c.user.firstname} ${c.user.lastname}` : c.title}
                                                 className="flex items-center gap-1.5 px-1.5 py-0.75 rounded bg-base-200/60 hover:bg-base-200 transition-colors group cursor-pointer"
                                                 style={{
                                                     borderLeft: `2.5px solid ${PLATFORM_COLOR[c.contentPlatform ?? "BLOG"] ?? "#9CA3AF"}`,
@@ -290,6 +314,9 @@ export default function CalendrierPage() {
                                                 />
                                                 <span className="text-[10px] font-medium text-base-content/55 group-hover:text-base-content/80 truncate leading-snug transition-colors">
                                                     {c.title}
+                                                    {scope === "agency" && c.user && (
+                                                        <span className="text-base-content/35"> · {c.user.firstname}</span>
+                                                    )}
                                                 </span>
                                             </Link>
                                         ))}
