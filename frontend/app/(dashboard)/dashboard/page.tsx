@@ -35,7 +35,7 @@ export default function DashboardPage() {
             router.push("/login");
             return;
         }
-        console.log("User role:", user?.role);
+        // console.log("User role:", user?.role);
         if (!authLoading && user?.role === "super_admin") {
             router.push("/admin/agencies");
         }
