@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {Suspense, useEffect, useState} from "react";
 import {useSearchParams, useRouter} from "next/navigation";
 import {CheckCircle, ArrowRight, Loader2, XCircle} from "lucide-react";
 import Link from "next/link";
@@ -14,6 +14,14 @@ interface SessionSummary {
 }
 
 export default function PricingSuccessPage() {
+    return (
+        <Suspense fallback={null}>
+            <PricingSuccessContent />
+        </Suspense>
+    );
+}
+
+function PricingSuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const sessionId = searchParams.get("session_id");

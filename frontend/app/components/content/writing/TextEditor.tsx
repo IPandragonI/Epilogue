@@ -124,7 +124,7 @@ export default function TextEditor({content, onChange, maxChars, onCharsChange, 
     useEffect(() => {
         if (!editor) return;
         if (editor.getHTML() !== content) {
-            editor.commands.setContent(content || "", false);
+            editor.commands.setContent(content || "");
             onCharsChange?.(editor.storage.characterCount?.characters() ?? 0);
         }
     }, [content]); // eslint-disable-line react-hooks/exhaustive-deps

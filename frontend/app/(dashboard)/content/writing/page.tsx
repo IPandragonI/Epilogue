@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {Suspense, useEffect, useState} from "react";
 import {CheckCircle2, Sparkles, ArrowRight} from "lucide-react";
 import {Platform, PlatformConfig, PlatformType, SuggestedTopic} from "@/app/types/types";
 import Preview from "@/app/components/content/writing/Preview";
@@ -21,6 +21,14 @@ const API_PLATFORM_TO_UI: Record<SuggestedTopic["recommendedPlatform"], Platform
 };
 
 export default function WritingPage() {
+    return (
+        <Suspense fallback={null}>
+            <WritingPageContent />
+        </Suspense>
+    );
+}
+
+function WritingPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const ideaId = searchParams.get("idea");

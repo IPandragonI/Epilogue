@@ -270,7 +270,7 @@ function AgencyUserRow({
           });
         }
       });
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || 'Erreur réseau');
     }
   }

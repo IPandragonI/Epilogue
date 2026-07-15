@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {Suspense, useEffect, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useAuth} from "../../hooks/useAuth";
 import {AgencySubscription, BillingCycle, SubscriptionPlan} from "../../types/types";
@@ -205,6 +205,14 @@ function UsageBar({label, used, max}: { label: string; used: number; max: number
 }
 
 export default function PricingPage() {
+    return (
+        <Suspense fallback={null}>
+            <PricingPageContent />
+        </Suspense>
+    );
+}
+
+function PricingPageContent() {
     const {user, loading: authLoading} = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();

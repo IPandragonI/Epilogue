@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {Suspense, useEffect, useState} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole} from "lucide-react";
@@ -12,6 +12,14 @@ import AuthFooter from "@/app/components/auth/AuthFooter";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={null}>
+            <ResetPasswordForm />
+        </Suspense>
+    );
+}
+
+function ResetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token") ?? "";
