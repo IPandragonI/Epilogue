@@ -72,6 +72,7 @@ export interface Content {
     date: string;
     createdAt?: string;
     publishedDate?: string | null;
+    scheduledPublishDate?: string | null;
     seo?: ContentSeo;
     status: ContentStatus;
     notion?: ContentNotion;

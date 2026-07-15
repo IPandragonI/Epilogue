@@ -164,8 +164,41 @@ const STATUS_OPTIONS: { value: ContentStatus; label: string; icon: React.ReactNo
     },
 ];
 
-function StatusDropdown({ status, onChange }: { status: ContentStatus; onChange: (s: ContentStatus) => void }) {
+function toDatetimeLocalValue(iso?: string | null): string {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function StatusDropdown({
+    status,
+    scheduledPublishDate,
+    onChange,
+}: {
+    status: ContentStatus;
+    scheduledPublishDate?: string | null;
+    onChange: (s: ContentStatus, scheduledPublishDate?: string) => void;
+}) {
     const current = STATUS_OPTIONS.find((o) => o.value === status) ?? STATUS_OPTIONS[0];
+    const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+    const [scheduleValue, setScheduleValue] = useState(() => toDatetimeLocalValue(scheduledPublishDate));
+
+    const handleOptionClick = (value: ContentStatus) => {
+        if (value === status) return;
+        if (value === ContentStatus.WAITING_PUBLISH) {
+            setScheduleValue(toDatetimeLocalValue(scheduledPublishDate));
+            setShowSchedulePicker(true);
+            return;
+        }
+        onChange(value);
+    };
+
+    const handleConfirmSchedule = () => {
+        setShowSchedulePicker(false);
+        onChange(ContentStatus.WAITING_PUBLISH, scheduleValue ? new Date(scheduleValue).toISOString() : undefined);
+    };
 
     return (
         <div className="dropdown dropdown-end">
@@ -180,30 +213,57 @@ function StatusDropdown({ status, onChange }: { status: ContentStatus; onChange:
                                 ? "bg-base-300/40 text-base-content/50 border-base-300"
                                 : "bg-base-200 text-base-content/60 border-base-300"
                 }`}
+                title={status === ContentStatus.WAITING_PUBLISH && scheduledPublishDate ? `Publication prévue le ${new Date(scheduledPublishDate).toLocaleString("fr-FR")}` : undefined}
             >
                 <span className={current.cls}>{current.icon}</span>
                 {current.label}
                 <ChevronDown size={10} className="opacity-60" />
             </button>
-            <ul
-                tabIndex={0}
-                className="dropdown-content menu bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 w-44 p-1 mt-1 gap-0.5"
-            >
-                {STATUS_OPTIONS.map((opt) => (
-                    <li key={opt.value}>
+            {showSchedulePicker ? (
+                <div className="dropdown-content bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 w-64 p-3 mt-1 flex flex-col gap-2">
+                    <p className="text-xs font-semibold text-base-content/60">Date de publication prévue</p>
+                    <input
+                        type="datetime-local"
+                        value={scheduleValue}
+                        onChange={(e) => setScheduleValue(e.target.value)}
+                        className="input input-bordered input-sm w-full"
+                    />
+                    <div className="flex justify-end gap-2 mt-1">
                         <button
-                            onClick={() => onChange(opt.value)}
-                            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left ${
-                                opt.value === status ? "bg-base-200 font-semibold" : "hover:bg-base-200"
-                            }`}
+                            onClick={() => setShowSchedulePicker(false)}
+                            className="btn btn-xs btn-ghost rounded-lg"
                         >
-                            <span className={opt.cls}>{opt.icon}</span>
-                            {opt.label}
-                            {opt.value === status && <Check size={12} className="ml-auto text-accent" />}
+                            Annuler
                         </button>
-                    </li>
-                ))}
-            </ul>
+                        <button
+                            onClick={handleConfirmSchedule}
+                            className="btn btn-xs btn-accent rounded-lg"
+                        >
+                            Confirmer
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <ul
+                    tabIndex={0}
+                    className="dropdown-content menu bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 w-44 p-1 mt-1 gap-0.5"
+                >
+                    {STATUS_OPTIONS.map((opt) => (
+                        <li key={opt.value}>
+                            <button
+                                onClick={() => handleOptionClick(opt.value)}
+                                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left ${
+                                    opt.value === status ? "bg-base-200 font-semibold" : "hover:bg-base-200"
+                                }`}
+                            >
+                                <span className={opt.cls}>{opt.icon}</span>
+                                {opt.label}
+                                {opt.value === status && <Check size={12} className="ml-auto text-accent" />}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 }
@@ -406,12 +466,15 @@ export default function PostDetailPage() {
         }
     };
 
-    const handleStatusChange = async (newStatus: ContentStatus) => {
-        if (newStatus === content.status) return;
+    const handleStatusChange = async (newStatus: ContentStatus, scheduledPublishDate?: string) => {
+        if (newStatus === content.status && scheduledPublishDate === undefined) return;
         try {
             const body: Record<string, unknown> = { status: newStatus };
             if (newStatus === ContentStatus.PUBLISHED && !content.publishedDate) {
                 body.publishedDate = new Date().toISOString();
+            }
+            if (newStatus === ContentStatus.WAITING_PUBLISH) {
+                body.scheduledPublishDate = scheduledPublishDate ?? null;
             }
             const res = await fetch(`${API_URL}/content/${content.id}`, {
                 method: "PATCH",
@@ -420,7 +483,12 @@ export default function PostDetailPage() {
                 body: JSON.stringify(body),
             });
             if (!res.ok) throw new Error();
-            setContent({ ...content, status: newStatus, publishedDate: body.publishedDate as string ?? content.publishedDate });
+            setContent({
+                ...content,
+                status: newStatus,
+                publishedDate: (body.publishedDate as string) ?? content.publishedDate,
+                scheduledPublishDate: newStatus === ContentStatus.WAITING_PUBLISH ? (scheduledPublishDate ?? null) : content.scheduledPublishDate,
+            });
             await Toast.fire({ icon: "success", title: `Statut mis à jour : ${StatusLabels[newStatus]}` });
         } catch {
             await Toast.fire({ icon: "error", title: "Erreur lors du changement de statut" });
@@ -558,7 +626,7 @@ export default function PostDetailPage() {
                     {currentPlatform.label}
                 </span>
 
-                <StatusDropdown status={content.status} onChange={handleStatusChange} />
+                <StatusDropdown status={content.status} scheduledPublishDate={content.scheduledPublishDate} onChange={handleStatusChange} />
 
                 {content.status !== ContentStatus.PUBLISHED && (
                     <button

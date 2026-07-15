@@ -25,6 +25,10 @@ export class CreateContentDto {
   @IsDateString()
   publishedDate?: Date;
 
+  @IsOptional()
+  @IsDateString()
+  scheduledPublishDate?: Date;
+
   @IsEmpty()
   notionPageId?: string;
 

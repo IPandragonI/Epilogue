@@ -50,6 +50,9 @@ export class Content {
   @Column({ type: 'timestamp', nullable: true })
   publishedDate?: Date | null;
 
+  @Column({ type: 'timestamp', nullable: true })
+  scheduledPublishDate?: Date | null;
+
   @OneToOne(() => ContentSeo, (seo) => seo.content, {
     cascade: true,
     onDelete: 'CASCADE',

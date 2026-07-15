@@ -52,7 +52,11 @@ function buildCalendarDays(year: number, month: number): Date[] {
 }
 
 function resolveDate(c: Content): Date {
-    const raw = (c as any).publishedDate || (c as any).createdAt || c.date;
+    const raw =
+        (c.status === ContentStatus.WAITING_PUBLISH && c.scheduledPublishDate) ||
+        (c as any).publishedDate ||
+        (c as any).createdAt ||
+        c.date;
     const d = new Date(raw);
     return isNaN(d.getTime()) ? new Date(0) : d;
 }

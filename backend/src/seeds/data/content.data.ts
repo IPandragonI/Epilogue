@@ -100,4 +100,32 @@ export const contentData = () => [
     },
     userId: '',
   },
+  {
+    title: 'Les tendances SEO à surveiller pour la rentrée',
+    body: 'Un tour d’horizon des évolutions attendues des moteurs de recherche pour la rentrée...',
+    contentPlatform: PlatformEnum.BLOG,
+    status: ContentStatusEnum.WAITING_PUBLISH,
+    publishedDate: null,
+    scheduledPublishDate: new Date('2026-09-01T09:00:00'),
+    seo: {
+      score: 70,
+      keywords: 'tendances SEO, rentrée, moteurs de recherche',
+      review: 'Bon contenu, prêt pour publication programmée.',
+    },
+    userId: '',
+  },
+  {
+    title: 'Checklist avant de publier un post LinkedIn',
+    body: 'Les points à vérifier avant de publier : accroche, hashtags, visuel, appel à l’action...',
+    contentPlatform: PlatformEnum.LINKEDIN,
+    status: ContentStatusEnum.WAITING_PUBLISH,
+    publishedDate: null,
+    scheduledPublishDate: new Date('2026-08-20T08:00:00'),
+    seo: {
+      score: 55,
+      keywords: 'LinkedIn, checklist, publication',
+      review: 'Format court, prêt à être diffusé à la date prévue.',
+    },
+    userId: '',
+  },
 ];
