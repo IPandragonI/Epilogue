@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { X, Link, Rss, FileText, Zap, Upload, Check } from "lucide-react";
+import { X, Link, Rss, FileText, Zap, Upload, Check, Sparkles, AlertCircle } from "lucide-react";
 import {useAuth} from "@/app/hooks/useAuth";
 import {CreateCurationItemDto} from "@/app/types/types";
 
@@ -461,15 +461,17 @@ export function NewResourceModal({isOpen, onClose, onSubmit}: AddResourceModalPr
                             <label className="text-xs font-medium text-base-content/70">
                                 URL de la ressource
                             </label>
-                            <div className="flex items-center gap-2 input input-bordered input-sm flex-1 min-w-0 px-3 focus-within:border-accent">
-                                    <Link size={14} className="text-base-content/30 shrink-0" strokeWidth={1.8}/>
-                                <input
-                                    type="url"
-                                    value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
-                                    placeholder="https://exemple.com/mon-super-article-seo"
-                                    className="flex-1 min-w-0 text-sm bg-transparent outline-none"
-                                />
+                            <div className="flex flex-1">
+                                <div className="flex items-center gap-2 input input-bordered input-sm flex-1 min-w-0 px-3 focus-within:border-accent">
+                                    <Rss size={14} className="text-base-content/30 shrink-0" strokeWidth={1.8}/>
+                                    <input
+                                        type="url"
+                                        value={url}
+                                        onChange={(e) => setUrl(e.target.value)}
+                                        placeholder="https://techcrunch.com"
+                                        className="flex-1 min-w-0 text-sm bg-transparent outline-none"
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}

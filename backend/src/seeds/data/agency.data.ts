@@ -1,10 +1,14 @@
 export const agencyData = () => [
   {
-    name: 'Default Agency',
+    name: 'Atelier Horizon',
     notionToken: '',
   },
   {
-    name: 'Default Agency 2',
+    name: 'Ligne Claire Communication',
+    notionToken: '',
+  },
+  {
+    name: 'Impulse Média',
     notionToken: '',
   },
 ];

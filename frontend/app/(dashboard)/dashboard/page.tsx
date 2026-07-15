@@ -8,6 +8,7 @@ import PostTable from "../content/posts/table";
 import StatCards from "@/app/components/content/StatCards";
 import QuotaWidget from "@/app/components/dashboard/QuotaWidget";
 import PlatformWidget from "@/app/components/dashboard/PlatformWidget";
+import {Sparkles} from "lucide-react";
 
 interface DashboardStats {
     total: number;
@@ -61,8 +62,8 @@ export default function DashboardPage() {
                     <p className="text-xs text-base-content/40 uppercase tracking-widest font-semibold mb-0.5">
                         {formatDate(today)}
                     </p>
-                    <h1 className="text-2xl font-bold text-base-content">
-                        Bonjour, {user.firstname} 👋
+                    <h1 className="text-2xl font-bold text-base-content flex items-center gap-4">
+                        Bonjour, {user.firstname} <Sparkles size={20} />
                     </h1>
                     {user.agency?.name && (
                         <p className="text-sm text-base-content/45 mt-0.5">{user.agency.name}</p>

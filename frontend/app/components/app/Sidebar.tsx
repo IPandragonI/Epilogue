@@ -70,12 +70,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 function buildAdminNavItem(isSuperAdmin: boolean): NavItem[] {
-    return [{
-        type: "link",
-        label: "Gestion des entreprises",
-        icon: <BriefcaseBusiness size={18} />,
-        href: "/admin/agencies",
-    },
+    return [
     {
         type: "link",
         label: "Gestion des utilisateurs",
