@@ -6,6 +6,7 @@ import { Agency } from './entities/agency.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RegisterDto } from '../../auth/dto/auth.dto';
 import { User } from '../users/entities/user.entity';
+import { UserRole } from '../users/entities/userRole.enum';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -14,19 +15,26 @@ export class AgencyService {
     @InjectRepository(Agency)
     private agencyRepository: Repository<Agency>,
     @InjectRepository(User)
-    private userRepository: Repository<any>,
+  private userRepository: Repository<User>,
   ) {}
 
   create(createAgencyDto: CreateAgencyDto) {
     return this.agencyRepository.save(createAgencyDto as Agency);
   }
 
-  findAll() {
-    return this.agencyRepository.find();
+  async findAll() {
+    return this.agencyRepository
+      .createQueryBuilder('agency')
+      .loadRelationCountAndMap('agency.userCount', 'agency.users')
+      .getMany();
   }
 
-  findOne(id: string) {
-    return this.agencyRepository.findOneBy({ id });
+  async findOne(id: string) {
+    return this.agencyRepository
+      .createQueryBuilder('agency')
+      .where('agency.id = :id', { id })
+      .loadRelationCountAndMap('agency.userCount', 'agency.users')
+      .getOne();
   }
 
   update(id: string, updateAgencyDto: UpdateAgencyDto) {
@@ -37,16 +45,22 @@ export class AgencyService {
     return this.agencyRepository.delete(id);
   }
 
-  async createAgencyUser(id: string, user: RegisterDto) {
+  async createAgencyUser(id: string, user: RegisterDto & { role?: UserRole }) {
     const agency = await this.agencyRepository.findOneBy({ id });
     if (!agency) {
       throw new Error('Agency not found');
     }
-    user.password = await bcrypt.hash(user.password, 10);
+
+    const hashedPassword = await bcrypt.hash(user.password, 10);
     const newUser = {
-      ...user,
-      agency: agency,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      email: user.email,
+      password: hashedPassword,
+      role: user.role ?? UserRole.PUBLIC,
+      agency,
     };
+
     return await this.userRepository.save(newUser);
   }
 

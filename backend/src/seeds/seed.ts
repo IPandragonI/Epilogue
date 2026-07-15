@@ -19,6 +19,7 @@ import { userData } from './data/user.data';
 import { contentData } from './data/content.data';
 import { curationData } from './data/curation.data';
 import { subscriptionPlanData } from './data/subscription-plan.data';
+import { AgencySubscription } from 'src/modules/agency-subscription/entities/agency-subscription.entity';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -37,7 +38,8 @@ async function seed() {
       Content,
       User,
       Agency,
-      SubscriptionPlan
+      AgencySubscription,
+      SubscriptionPlan,
     ];
     for (const entity of entities) {
       const repository = dataSource.getRepository(entity);
@@ -55,7 +57,7 @@ async function seed() {
     );
     console.log('✅ Subscription Plans seeded');
 
-    const agencySubscriptionRepo = dataSource.getRepository('AgencySubscription');
+    const agencySubscriptionRepo = dataSource.getRepository(AgencySubscription);
     await agencySubscriptionRepo.save(
       agencies.map((agency) => ({
         agencyId: agency.id,

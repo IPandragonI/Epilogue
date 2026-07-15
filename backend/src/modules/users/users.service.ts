@@ -21,7 +21,6 @@ export class UsersService {
     return this.userRepository.save(user as User);
   }
 
-  // Retourne les users en incluant la relation agency
   findAll(): Promise<User[]> {
     return this.userRepository.find({ relations: ['agency'] });
   }

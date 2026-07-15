@@ -1,8 +1,8 @@
 "use client";
 
-import {useState, useEffect} from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import {usePathname} from "next/navigation";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import {
     LayoutDashboard,
@@ -15,19 +15,22 @@ import {
     CalendarDays,
     Cloud,
     ShieldCheck,
+    BriefcaseBusiness,
+    Users,
 } from "lucide-react";
-import {useAuth} from "@/app/hooks/useAuth";
-import {UserRole} from "@/app/types/types";
+import { useAuth } from "@/app/hooks/useAuth";
+import { UserRole } from "@/app/types/types";
 
 type NavChild = { label: string; href: string };
 
 type NavItem =
-    | { type: "link"; label: string; href: string; icon: React.ReactNode }
+    | { type: "link"; label: string; href: string; icon: React.ReactNode; isSuperAdmin?: boolean }
     | {
     type: "group";
     label: string;
     icon: React.ReactNode;
     children: NavChild[];
+    isSuperAdmin?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -35,23 +38,23 @@ const NAV_ITEMS: NavItem[] = [
         type: "link",
         label: "Dashboard",
         href: "/dashboard",
-        icon: <LayoutDashboard size={18}/>,
+        icon: <LayoutDashboard size={18} />,
     },
     {
         type: "group",
         label: "Contenu",
-        icon: <FileText size={18}/>,
+        icon: <FileText size={18} />,
         children: [
-            {label: "Mes posts", href: "/content/posts"},
-            {label: "Génération d'idées", href: "/content/suggested-topics"},
-            {label: "Rédaction de contenus", href: "/content/writing"},
+            { label: "Mes posts", href: "/content/posts" },
+            { label: "Génération d'idées", href: "/content/suggested-topics" },
+            { label: "Rédaction de contenus", href: "/content/writing" },
         ],
     },
     {
         type: "link",
         label: "Curation de contenu",
         href: "/curation",
-        icon: <Layers size={18}/>,
+        icon: <Layers size={18} />,
     },
     {
         type: "link",
@@ -66,27 +69,43 @@ const NAV_ITEMS: NavItem[] = [
     },
 ];
 
-function buildAdminNavItem(isSuperAdmin: boolean): NavItem {
-    return {
-        type: "group",
-        label: "Administration",
-        icon: <ShieldCheck size={18}/>,
-        children: [
-            {label: "Vue d'ensemble", href: "/admin"},
-            ...(isSuperAdmin ? [{label: "Entreprises", href: "/admin/agencies"}] : []),
-            {label: "Utilisateurs", href: "/admin/users"},
-        ],
-    };
+function buildAdminNavItem(isSuperAdmin: boolean): NavItem[] {
+    return [{
+        type: "link",
+        label: "Gestion des entreprises",
+        icon: <BriefcaseBusiness size={18} />,
+        href: "/admin/agencies",
+    },
+    {
+        type: "link",
+        label: "Gestion des utilisateurs",
+        icon: <Users size={18} />,
+        href: "/admin/users",
+    }]
 }
 
-const BOTTOM_ITEMS = [
-    {label: "Abonnement", href: "/pricing", icon: <CreditCard size={18}/>,},
-    {label: "Support", href: "/support", icon: <HelpCircle size={18}/>},
-    {label: "Paramètres", href: "/parameters", icon: <Settings size={18}/>},
+const SUPER_ADMIN_NAV_ITEMS: NavItem[] = [
+    {
+        type: "link",
+        label: "Gestion des entreprises",
+        icon: <BriefcaseBusiness size={18} />,
+        href: "/admin/agencies",
+    },
+    {
+        type: "link",
+        label: "Gestion des utilisateurs",
+        icon: <Users size={18} />,
+        href: "/admin/users",
+    }
 ];
 
+const BOTTOM_ITEMS = [
+    { label: "Abonnement", href: "/pricing", icon: <CreditCard size={18} /> },
+    { label: "Support", href: "/support", icon: <HelpCircle size={18} /> },
+    { label: "Paramètres", href: "/parameters", icon: <Settings size={18} /> },
+];
 
-function NavGroup({item, isOpen}: {
+function NavGroup({ item, isOpen }: {
     item: Extract<NavItem, { type: "group" }>;
     isOpen: boolean;
 }) {
@@ -147,7 +166,7 @@ function NavGroup({item, isOpen}: {
     );
 }
 
-function NavLink({item, isOpen}: {
+function NavLink({ item, isOpen }: {
     item: Extract<NavItem, { type: "link" }>;
     isOpen: boolean;
 }) {
@@ -172,13 +191,26 @@ function NavLink({item, isOpen}: {
     );
 }
 
-export default function Sidebar({isOpen}: { isOpen: boolean }) {
-    const {user} = useAuth();
+export default function Sidebar({ isOpen }: { isOpen: boolean }) {
+    const { user, loading } = useAuth();
     const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
     const isAgencyAdmin = user?.role === UserRole.ADMIN;
-    const navItems = isSuperAdmin || isAgencyAdmin
-        ? [...NAV_ITEMS, buildAdminNavItem(isSuperAdmin)]
-        : NAV_ITEMS;
+
+    const navItems = useMemo(() => {
+        if (loading) {
+            return [];
+        }
+
+        if (isSuperAdmin) {
+            return SUPER_ADMIN_NAV_ITEMS;
+        }
+
+        if (isAgencyAdmin) {
+            return [...NAV_ITEMS, ...buildAdminNavItem(isSuperAdmin)];
+        }
+
+        return NAV_ITEMS;
+    }, [loading, isSuperAdmin, isAgencyAdmin]);
 
     return (
         <aside
@@ -186,42 +218,47 @@ export default function Sidebar({isOpen}: { isOpen: boolean }) {
                 ${isOpen ? "w-56" : "w-14"}`}
         >
             <Link href={"/dashboard"} className="flex items-center gap-2.5 px-4 h-16 border-b border-base-200 shrink-0">
-                <Image src="/logo.png" alt="Logo" width={32} height={32}/>
+                <Image src="/logo.png" alt="Logo" width={32} height={32} />
                 {isOpen && (
                     <span className="font-bold text-lg tracking-tight whitespace-nowrap">
-            Épilogue
-          </span>
+                        Épilogue
+                    </span>
                 )}
             </Link>
 
             <nav className="flex-1 px-2 py-4 overflow-y-auto">
                 <ul className="flex flex-col gap-0.5">
-                    {navItems.map((item, i) =>
-                        item.type === "link" ? (
-                            <NavLink key={i} item={item} isOpen={isOpen}/>
-                        ) : (
-                            <NavGroup key={i} item={item} isOpen={isOpen}/>
+                    {navItems.length > 0
+                        ? navItems.map((item, i) =>
+                            item.type === "link" ? (
+                                <NavLink key={i} item={item} isOpen={isOpen} />
+                            ) : (
+                                <NavGroup key={i} item={item} isOpen={isOpen} />
+                            )
                         )
-                    )}
+                        : null}
                 </ul>
             </nav>
-
-            <div className="px-2 pb-4 border-t border-base-200 pt-3">
-                <ul className="flex flex-col gap-0.5">
-                    {BOTTOM_ITEMS.map((item) => (
-                        <li key={item.href}>
-                            <Link
-                                href={item.href}
-                                title={!isOpen ? item.label : undefined}
-                                className="flex items-center gap-3 px-3 py-2 rounded-lg text-base-content/60 hover:bg-base-200 hover:text-base-content transition-colors"
-                            >
-                                <span className="shrink-0">{item.icon}</span>
-                                {isOpen && <span className="text-sm">{item.label}</span>}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+            {
+                !isSuperAdmin && (
+                    <div className="px-2 pb-4 border-t border-base-200 pt-3">
+                        <ul className="flex flex-col gap-0.5">
+                            {BOTTOM_ITEMS.map((item) => (
+                                <li key={item.href}>
+                                    <Link
+                                        href={item.href}
+                                        title={!isOpen ? item.label : undefined}
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-base-content/60 hover:bg-base-200 hover:text-base-content transition-colors"
+                                    >
+                                        <span className="shrink-0">{item.icon}</span>
+                                        {isOpen && <span className="text-sm">{item.label}</span>}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )
+            }
         </aside>
     );
 }

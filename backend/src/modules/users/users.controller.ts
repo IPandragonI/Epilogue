@@ -22,8 +22,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Get()
   @ApiOperation({
     summary: 'Get all users',

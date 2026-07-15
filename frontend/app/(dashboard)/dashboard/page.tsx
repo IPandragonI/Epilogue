@@ -31,7 +31,14 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
 
     useEffect(() => {
-        if (!authLoading && !user) router.push("/login");
+        if (!authLoading && !user) {
+            router.push("/login");
+            return;
+        }
+        console.log("User role:", user?.role);
+        if (!authLoading && user?.role === "super_admin") {
+            router.push("/admin/agencies");
+        }
     }, [user, authLoading, router]);
 
     useEffect(() => {

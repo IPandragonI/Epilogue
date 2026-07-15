@@ -20,4 +20,6 @@ export class Agency {
 
   @OneToMany(() => User, (user) => user.agency)
   users: User[];
+
+  userCount?: number;
 }
