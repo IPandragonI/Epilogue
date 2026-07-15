@@ -103,7 +103,10 @@ export class AuthController {
   logout(@Res() reply: FastifyReply) {
     return reply
       .clearCookie('access_token', {
+        httpOnly: true,
         path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
       })
       .send({ success: true });
   }
